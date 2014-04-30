@@ -2,7 +2,7 @@ name := "fm-serializer"
 
 organization := "com.frugalmechanic"
 
-version := "0.1-SNAPSHOT"
+version := "0.1.0-SNAPSHOT"
 
 description := "LazySeq"
 
