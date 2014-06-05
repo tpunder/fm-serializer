@@ -6,15 +6,15 @@ version := "0.1.0-SNAPSHOT"
 
 description := "LazySeq"
 
-scalaVersion := "2.10.4"
+scalaVersion := "2.11.1"
 
-crossScalaVersions := Seq("2.10.4", "2.11.0")
+crossScalaVersions := Seq("2.10.4", "2.11.1")
 
 // Needed for the JavaBean tests to work
 compileOrder := CompileOrder.JavaThenScala
 
 // NOTE: For -Xelide-below:  ALL == Enabled Assertions,  OFF == Disabled Assertions
-scalacOptions := Seq("-unchecked", "-deprecation", "-language:implicitConversions,experimental.macros", "-feature", "-optimise", "-Yinline-warnings", "-Xelide-below", "OFF")
+scalacOptions := Seq("-unchecked", "-deprecation", "-language:implicitConversions,experimental.macros", "-feature", "-Xlint", "-optimise", "-Yinline-warnings", "-Xelide-below", "OFF")
 
 libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-reflect" % _)
 
