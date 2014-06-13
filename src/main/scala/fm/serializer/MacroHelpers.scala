@@ -127,7 +127,8 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     require(null != name && name.length > 0, "name is empty")  
     require(null != tpe, "tpe is null")
     
-    val fieldAccessor: Tree = {      
+    val fieldAccessor: Tree = {
+      require(field.getter != null, s"FieldImpl.getter is null for FieldImpl: $field")
       val getter: TermName = newTermName(field.getter)
       val noArgs: Boolean = noArgsMethod(objTpe, getter).paramss.isEmpty
       if (noArgs) q"obj.${getter}" else q"obj.${getter}()"
@@ -227,7 +228,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
       if (-1 == a) b
       else if (-1 == b) a
       else {
-        require(a == b, "Values don't match: $a != $b")
+        require(a == b, s"Values don't match: $a != $b")
         a
       }
     }
@@ -246,7 +247,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
   }
   
   def cleanFieldImpls(fields: Seq[FieldImpl]): Vector[FieldImpl] = {
-    val tmp = fields.toVector.sortBy{ _.number }
+    val tmp: Vector[FieldImpl] = fields.toVector.sortBy{ _.number }
       
     tmp.foreach{ f: FieldImpl => require(f.number > 0, s"Number must be > 0: $f") }
     tmp.foreach{ f: FieldImpl => require(null != f.name && f.name.length > 0, s"Name must be non-blank: $f") }
@@ -270,7 +271,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
         require(method.paramss.isEmpty || method.paramss == List(List()), s"Getter should have an empty param list.  Tpe: ${objTpe}  Getter: ${f.getter}  Paramss: ${method.paramss}")
         
         val returnType: Type = resolveType(objTpe, method.returnType)
-        require(!(returnType =:= typeOf[Unit]), "Getter return type should not be Unit.  Tpe: ${objTpe}  Getter: ${f.getter}  Paramss: ${returnType}")
+        require(!(returnType =:= typeOf[Unit]), s"Getter return type should not be Unit.  Tpe: ${objTpe}  Getter: ${f.getter}  Paramss: ${returnType}")
         f.copy(tpe = returnType)
       }
     }
@@ -295,15 +296,20 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
   def extractFieldAnnotations[T: WeakTypeTag]: Seq[FieldImpl] = extractFieldAnnotations(weakTypeOf[T])
   
   def extractFieldAnnotations(tpe: Type): Seq[FieldImpl] = {
+    log(s"extractFieldAnnotations($tpe)")
+    
     val annotationTpe: Type = typeOf[Field]
     
     // annotations on values & methods in the class
     val fields: Vector[FieldImpl] = for {
       member <- tpe.members.toVector
+      // Seeing some weirdness with TermSymbols showing up with a space after them
+      // (e.g. decoded: "pies " encoded: "pies\u0020") so I guess we need to filter on isMethod?
+      if member.isMethod
       ann <- member.annotations
-      if ann.tpe == annotationTpe
+      if ann.tpe =:= annotationTpe
     } yield {
-      log(member)
+      log(s"""extractFieldAnnotations($tpe) - Member: $member - "${member.name.decoded}" (${member.getClass}) - Annotations: ${member.annotations}""")
       
       val sym: MethodSymbol = member.asMethod
       val returnType: Type = resolveType(tpe, sym.returnType)
@@ -320,7 +326,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
       // This will probably work but not sure if it's 100% correct (vs using encoded)
       val name: String = sym.name.decoded
       
-      val spec: FieldImpl = makeFieldImpl(ann.scalaArgs)
+      val spec: FieldImpl = makeFieldImpl(ann.scalaArgs, name)
       
       val additionalInfo: FieldImpl = 
         if (isGetter) {
@@ -347,10 +353,17 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
       params <- ctor.asMethod.paramss // TODO: Handle multiple parameter lists
       (param, idx) <- params.zipWithIndex
       ann <- param.annotations
-      if ann.tpe == annotationTpe
+      if ann.tpe =:= annotationTpe
     } yield {
-      val spec: FieldImpl = makeFieldImpl(ann.scalaArgs)
-      val additionalInfo: FieldImpl = FieldImpl(constructorIdx = idx)
+      log(s"extractFieldAnnotations($tpe) - Constructor Param: $param - Annotations: ${param.annotations}")
+      
+      val name: String = param.name.decoded
+      
+      // If this param is a Val then we can also use it as a getter
+      val getter: String = if (param.isTerm && param.asTerm.isVal) name else null
+      
+      val spec: FieldImpl = makeFieldImpl(ann.scalaArgs, name)
+      val additionalInfo: FieldImpl = FieldImpl(constructorIdx = idx, getter = getter, tpe = resolveType(tpe, param.typeSignature))
       
       spec combine additionalInfo
     }
@@ -370,7 +383,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
    * Given the arguments for a Field (either from an expression creating a new instance of a Field or from an annotation)
    * create a FieldImpl
    */
-  def makeFieldImpl(args: Seq[Tree]): FieldImpl = {
+  def makeFieldImpl(args: Seq[Tree], defaultName: String = null): FieldImpl = {
     args match {
       // Full Constructor:
       case Seq(int(number), string(name), string(getter), string(setter), int(constructorIdx), ser, deser) => FieldImpl(number, name, getter, setter, constructorIdx, ser, deser)
@@ -379,14 +392,14 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
       case Seq(int(number), string(name), string(getter), int(constructorIdx)) => FieldImpl(number, name, getter, null, constructorIdx)
       case Seq(int(number), string(name), string(getter), string(setter)) => FieldImpl(number, name, getter, setter, -1)
       case Seq(int(number), string(name)) => FieldImpl(number, name, null, null, -1)
-      case Seq(int(number)) => FieldImpl(number, null, null, null, -1)
+      case Seq(int(number)) => FieldImpl(number, defaultName, null, null, -1)
       
       // With Serializer Arg:
       // NOTE: The Tree matches for the serializer must come last since they will act as wildcard matches and conflict with some of the above patterns.
       case Seq(int(number), string(name), string(getter), int(constructorIdx), ser) => FieldImpl(number, name, getter, null, constructorIdx, ser, ser)
       case Seq(int(number), string(name), string(getter), string(setter), ser) => FieldImpl(number, name, getter, setter, -1, ser, ser)
       case Seq(int(number), string(name), ser) => FieldImpl(number, name, null, null, -1, ser, ser)
-      case Seq(int(number), ser) => FieldImpl(number, null, null, null, -1, ser, ser)
+      case Seq(int(number), ser) => FieldImpl(number, defaultName, null, null, -1, ser, ser)
     }
   }
   
@@ -584,7 +597,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
   
   def getImplicit(implicitTpe: Type, withMacrosDisabled: Boolean = false): Option[Tree] = {
     val t: Tree = ctx.inferImplicitValue(implicitTpe, silent = true, withMacrosDisabled = withMacrosDisabled, ctx.enclosingPosition)    
-    if(t.isEmpty) None else Some(t)
+    if (t.isEmpty) None else Some(t)
   }
 
   /**
@@ -636,8 +649,8 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
   def makeFieldImplsForJavaBean(tpe: Type): Seq[FieldImpl] = {
     log(s"makeFieldImplsForJavaBean($tpe)")
     
-    if(!hasNoArgsConstructor(tpe)) {
-      log("makeFieldImplsForJavaBean($tpe) - No args constructor not found")
+    if (!hasNoArgsConstructor(tpe)) {
+      log(s"makeFieldImplsForJavaBean($tpe) - No args constructor not found")
       return Nil
     }
     
@@ -656,6 +669,55 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
         name = f.name,
         getter = f.getter,
         setter = f.setter
+      )
+    }
+  }
+  
+  /**
+   * Auto-Generate the FieldImpls for an IMMUTABLE Java Bean class following the standard bean naming conventions.
+   * 
+   * NOTE: The following restrictions are currently in place:
+   *    - Must have a "Value Constructor"
+   *    - Each field must have a corresponding getter
+   *    - There must be no extra getters
+   * 
+   *    * - This is targeted at the JAXB Value Constructor Plugin and Immutable Plugin:
+   *    
+   *          https://java.net/projects/jaxb2-commons/pages/Value-constructor
+   *          https://github.com/mklemm/jaxb2-rich-contract-plugin
+   *       
+   */
+  def makeFieldImplsForJavaBeanImmutable(tpe: Type): Seq[FieldImpl] = {
+    log(s"makeFieldImplsForJavaBeanImmutable($tpe)")
+    
+    // Try to extract the java bean information from the type (will throw exceptions if it doesn't work)
+    val beanFields: Vector[JavaBeanField] = try {
+      // The Value-Constructor plugin needs the fields sorted via sortBottomUp=true
+      getJavaBeanFields(tpe, allowMissingSetter = true, sortBottomUp = true)
+    } catch {
+      case ex: IllegalArgumentException =>
+        log(s"makeFieldImplsForJavaBeanImmutable($tpe) => IllegalArgumentException: ${ex.getMessage}")
+        return Nil
+    }
+    
+    log(s"makeFieldImplsForJavaBeanImmutable($tpe) - Bean Fields: $beanFields")
+    
+    if (beanFields.map{ _.setter }.map{ Option(_) }.exists{ _.isDefined }) {
+      log(s"makeFieldImplsForJavaBeanImmutable($tpe) => Setter(s) defined, not Immutable Java Bean")
+      return Nil
+    }
+    
+    if (!hasConstructorWithSignature(tpe, beanFields.map{ _.tpe })) {
+      log(s"makeFieldImplsForJavaBeanImmutable($tpe) - Constructor that takes (${beanFields.map{ _.tpe }}) not found")
+      return Nil
+    }
+    
+    beanFields.zipWithIndex.map{ case (f, idx) => 
+      FieldImpl(
+        number = idx + 1,
+        name = f.name,
+        getter = f.getter,
+        constructorIdx = idx
       )
     }
   }
@@ -742,6 +804,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     val fieldImpls: Seq[Seq[FieldImpl]] = Seq(
       extractFieldAnnotations(tpe),    // Try Annotations
       makeFieldImplsForCaseClass(tpe), // Try Auto-Generate for Case Classes
+      makeFieldImplsForJavaBeanImmutable(tpe), // Try Immutable Java Bean
       makeFieldImplsForJavaBean(tpe)   // Try as a Java Bean
     )
     
@@ -972,8 +1035,19 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     }
   }
   
-  private def TransientType: Type = typeOf[java.beans.Transient]
-  private def XmlTransientType: Type = typeOf[javax.xml.bind.annotation.XmlTransient]
+  def hasConstructorWithSignature(tpe: Type, params: Seq[Type]): Boolean = getConstructorWithSignature(tpe, params).isDefined
+  def constructorWithSignature(tpe: Type, params: Seq[Type]): MethodSymbol = getConstructorWithSignature(tpe, params).getOrElse{ ctx.abort(ctx.enclosingPosition, s"$tpe is missing a constructor that takes params: $params") }
+  
+  def getConstructorWithSignature(tpe: Type, params: Seq[Type]): Option[MethodSymbol] = getMethodsForType(tpe, nme.CONSTRUCTOR).find { method: MethodSymbol =>
+    method.paramss match {
+      case List(p) => p.map{ _.typeSignature } == params.toList
+      case _       => false
+    }
+  }
+  
+  private def ScalaTransientType   : Type = typeOf[scala.transient]
+  private def JavaBeanTransientType: Type = typeOf[java.beans.Transient]
+  private def XmlTransientType     : Type = typeOf[javax.xml.bind.annotation.XmlTransient]
   
   /**
    * We have to "initialize" the Symbol before some calls (e.g. sym.annotations)
@@ -987,11 +1061,28 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
    */
   private def initSymbol(sym: Symbol): Unit = sym.typeSignature
   
+  private[this] lazy val javaMirror = scala.reflect.runtime.universe.runtimeMirror(getClass.getClassLoader)
+  
+  /**
+   * HACK to check for java transient field
+   */
+  private def isJavaTransient(sym: Symbol): Boolean = {
+    if (!sym.isJava || !sym.isTerm || !sym.asTerm.isVar) return false
+    
+    //val clazz: Class[_] = javaMirror.runtimeClass(sym.owner.asClass)
+    //java.lang.reflect.Modifier.isTransient(clazz.getField(sym.name.decoded).getModifiers())
+    
+    // TODO: figure out how to implement this method
+    false
+  }
+  
   def hasTransientAnnotation(sym: Symbol): Boolean = {
     log(s"hasTransientAnnotation($sym)  -  Annotations: ${sym.annotations}")
     initSymbol(sym)
-    sym.annotations.map{ _.tpe }.exists{ ann: Type => ann =:= TransientType || ann =:= XmlTransientType }
+    isJavaTransient(sym) || sym.annotations.map{ _.tpe }.exists{ ann: Type => ann =:= ScalaTransientType || ann =:= JavaBeanTransientType || ann =:= XmlTransientType }
   }
+  
+  
   
   /**
    * Note: The setter is optional if the type is a java.util.List in which case the getter is expected to
@@ -1001,11 +1092,15 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
   
   /**
    * strict - Require all fields to have matching getters/setters
+   * allowMissingSetter - We allow the setter to be missing - this is for the
+   *                      case when we expect there to be no setter (but this isn't enforced, 
+   *                      the caller must verify)
+   * sortBottomUp       - See notes in sortFieldsBottomUp and getFieldsForType for info on the ordering
    */
-  def getJavaBeanFields(tpe: Type, strict: Boolean = true): Vector[JavaBeanField] = {
+  def getJavaBeanFields(tpe: Type, strict: Boolean = true, allowMissingSetter: Boolean = false, sortBottomUp: Boolean = false): Vector[JavaBeanField] = {
     log(s"getJavaBeanFields($tpe, strict: $strict)")
     
-    val fields: Vector[TermSymbol] = getFieldsForType(tpe)
+    val fields: Vector[TermSymbol] = if (sortBottomUp) sortFieldsBottomUp(getFieldsForType(tpe)) else getFieldsForType(tpe)
     
     var getters: Set[MethodSymbol] = javaBeanGetters(tpe).toSet
     var setters: Set[MethodSymbol] = javaBeanSetters(tpe).toSet
@@ -1050,15 +1145,23 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
         require(s.paramss.head.head.typeSignature =:= tpe, s"Expected setter $s to take a single parameter with the same type as field $field ($tpe)")
       }
       
-      if (tpe <:< typeOf[java.util.List[_]]) {
-        // This is okay - we allow the setter to be None if the getter returns a 
-        // live java.util.List for us to add items to (JAXB generates this pattern)
-      } else {
-        require(setter.isDefined, "Missing Setter for ")
-      }
-      
       val getterName: String = getter.name.decoded.trim
-      val setterName: String = setter.map{ _.name.decoded.trim }.getOrElse{ getterName }
+      
+      val setterName: String = setter.map{ _.name.decoded.trim }.getOrElse{
+        if (allowMissingSetter) {
+          // We are making the assumption that we expect no setters so we
+          // return null instead of first checking for the java.util.List case
+          // below.
+          null
+        } else if (tpe <:< typeOf[java.util.List[_]]) {
+          // This is okay - we allow the setter to be None if the getter returns a 
+          // live java.util.List for us to add items to (JAXB generates this pattern).
+          // In this case we just use the getterName
+          getterName
+        } else {
+          throw new IllegalArgumentException(s"Missing Setter for $tpe / $getter")
+        }
+      }
       
       if (hasTransientAnnotation(field) || hasTransientAnnotation(getter) || setter.exists{ hasTransientAnnotation } ) {
         log(s"Skipping Transient Field/Method:  $field  |  $getter  |  $setter")
@@ -1082,12 +1185,40 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     defs.result
   }
   
+  /**
+   * See the notes below for getFieldsForType().  For that example this gives you:
+   * Vector(baz, asd, foo, bar)
+   * 
+   * The XJC Value Constructor plugin generates constructor arguments in this order.
+   */
+  def sortFieldsBottomUp(fields: Vector[TermSymbol]): Vector[TermSymbol] = {
+    val classOrder: Vector[Symbol] = fields.map{ _.owner }.distinct.reverse
+    val grouped: Map[Symbol, Seq[TermSymbol]] = fields.groupBy{ _.owner }
+    classOrder.flatMap{ grouped(_) }
+  }
+  
+  /**
+   * These come back "in the linearization order of their owners".  This means that if you have classes:
+   *    class App extends AppBase {
+   *      val foo: String = _
+   *      val bar: String = _
+   *    }
+   *    
+   *    class AppBase {
+   *      val baz: String = _
+   *      val asd: String = _
+   *    }
+   *    
+   *  We end up with Vector(foo, bar, baz, asd)
+   */
   def getFieldsForType(tpe: Type): Vector[TermSymbol] = {
     log(s"getFieldsForType($tpe)  => tpe.members.sorted: ${tpe.members.sorted}")
     
     // Not sure if this is totally correct.  I don't really see a way to filter the variable/value symbols from a tpe.declarations
     tpe.members.sorted.filter{ d => d.isTerm && !d.isMethod }.map{ _.asTerm }.toVector
   }
+  
+  def getPublicMethodForType(tpe: Type): Vector[MethodSymbol] = getMethodsForType(tpe).filter{ _.isPublic }
   
   def getMethodsForType(tpe: Type): Vector[MethodSymbol] = {
     tpe.members.sorted.filter{ _.isTerm }.flatMap{ _.asTerm.alternatives }.filter{ _.isMethod }.map{ _.asMethod }.toVector
@@ -1102,7 +1233,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
   }
   
   def javaBeanGetters(tpe: Type): Vector[MethodSymbol] = {
-    getMethodsForType(tpe).filter{ isNoArgsMethod }.filter{ m: MethodSymbol =>
+    getPublicMethodForType(tpe).filter{ isNoArgsMethod }.filter{ m: MethodSymbol =>
       val name: String = m.name.decoded
       val isGetter: Boolean = name.startsWith("get") || (m.returnType =:= typeOf[Boolean] && name.startsWith("is"))
       
@@ -1111,7 +1242,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
   }
   
   def javaBeanSetters(tpe: Type): Vector[MethodSymbol] = {
-    getMethodsForType(tpe).filter{ isSingleArgMethod }.filter{ m: MethodSymbol =>
+    getPublicMethodForType(tpe).filter{ isSingleArgMethod }.filter{ m: MethodSymbol =>
       val name: String = m.name.decoded
       name.startsWith("set")
     }

@@ -283,6 +283,7 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     foo.getListWithoutSetter().addAll(Vector("One", "Two", "Three").asJava)
     foo.setIgnoredField1("ignored1")
     foo.setIgnoredField2("ignored2")
+    foo.setIgnoredField4("ignored4")
     
     val bytes: BYTES = serialize(foo)
     val foo2: FooJavaBean = deserialize[FooJavaBean](bytes)
@@ -294,6 +295,24 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     foo2.getListWithoutSetter.asScala should equal (foo.getListWithoutSetter.asScala)
     foo2.getIgnoredField1 should equal (null)
     foo2.getIgnoredField2 should equal (null)
+    
+    // This will fail until proper java transient field detection is in place
+    //foo2.getIgnoredField4 should equal (null)
+  }
+  
+  //===============================================================================================
+  // Java Beans Immutable
+  //===============================================================================================
+  test("FooJavaBeanImmutable") {
+    val foo: FooJavaBeanImmutable = new FooJavaBeanImmutable("Hello World", 123, FooEnum.Bar, Vector("aa", "bb", "cc").asJava)
+    
+    val bytes: BYTES = serialize(foo)
+    val foo2: FooJavaBeanImmutable = deserialize[FooJavaBeanImmutable](bytes)
+    
+    foo2.getName should equal (foo.getName)
+    foo2.getNumber should equal (foo.getNumber)
+    foo2.getFooEnum should equal (foo.getFooEnum)
+    foo2.getList.asScala should equal (foo.getList.asScala)
   }
   
   //===============================================================================================

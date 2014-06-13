@@ -654,7 +654,7 @@ final class FMByteArrayOutputStream(
     
     val prefixSize: Int = offset - startingOffset
     
-    assert(prefixSize >= 0 && prefixSize <= maxPrefixSize, "Invalid prefixSize: $prefixSize  maxPrefixSize: $maxPrefixSize")
+    assert(prefixSize >= 0 && prefixSize <= maxPrefixSize, s"Invalid prefixSize: $prefixSize  maxPrefixSize: $maxPrefixSize")
 
     //debug("=======================================================================================================================")
     //debug(s"startingSize: $startingSize")
@@ -1193,7 +1193,7 @@ final class FMByteArrayOutputStream(
   }
   
   @elidable(elidable.ASSERTION)
-  def check: Unit = dumpOnAssert {
+  def check(): Unit = dumpOnAssert {
     var i: Int = 0
     while(i < bufferCount) {
       val buf: Array[Byte] = buffers(i)

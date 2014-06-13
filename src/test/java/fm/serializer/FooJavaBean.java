@@ -15,6 +15,7 @@ public class FooJavaBean {
   protected String ignoredField1;
   @XmlTransient protected String ignoredField2;
 //  @XmlTransient public String ignoredField3;
+  protected transient String ignoredField4;
   
   public String getName() {
     return name;
@@ -72,8 +73,11 @@ public class FooJavaBean {
     this.ignoredField2 = value;
   }
   
-//  @XmlTransient
-//  public String getIgnoredField4() {
-//    return "ignoredField4";
-//  }
+  public String getIgnoredField4() {
+    return ignoredField4;
+  }
+  
+  public void setIgnoredField4(String value) {
+    this.ignoredField4 = value;
+  }
 }

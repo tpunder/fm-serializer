@@ -15,6 +15,10 @@
  */
 package fm.serializer
 
+object SimpleObjectSerializer {
+  def make[T](): SimpleObjectSerializer[T] = macro Macros.makeSimpleObjectSerializer[T]
+}
+
 final case class SimpleObjectSerializer[T](implicit ser: ObjectSerializer[T], deser: ObjectDeserializer[T]) extends ObjectSerializer[T] with ObjectDeserializer[T] with SimpleSerializer[T] {
   final def defaultValue: T = deser.defaultValue
   final def deserializeRaw(input: RawInput): T = deser.deserializeRaw(input)
