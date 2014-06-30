@@ -1061,19 +1061,35 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
    */
   private def initSymbol(sym: Symbol): Unit = sym.typeSignature
   
-  private[this] lazy val javaMirror = scala.reflect.runtime.universe.runtimeMirror(getClass.getClassLoader)
+  //
+  // HACK HACK HACK
+  //
+  // There doesn't appear to be any other way to check if a java field is marked transient
+  // other than using java reflection which requires us to have a Class instance.  So
+  // we create a throwaway ClassLoader to load the class.  If the Java class is part
+  // of the project that is using the serializer macros then you *might* need this in your build.sbt:
+  //
+  //   compileOrder := CompileOrder.JavaThenScala
+  //
+  // MUST lazy load this since otherwise ctx won't be initialized.  We also only need the ClassLoader
+  // if we are working with Java classes.
+  private lazy val classLoader: ClassLoader = new java.net.URLClassLoader(ctx.classPath.toArray)
   
   /**
    * HACK to check for java transient field
    */
   private def isJavaTransient(sym: Symbol): Boolean = {
     if (!sym.isJava || !sym.isTerm || !sym.asTerm.isVar) return false
+
+    val className: String = sym.owner.asClass.fullName
     
-    //val clazz: Class[_] = javaMirror.runtimeClass(sym.owner.asClass)
-    //java.lang.reflect.Modifier.isTransient(clazz.getField(sym.name.decoded).getModifiers())
+    log(s"isJavaTransient - Loading $className")
     
-    // TODO: figure out how to implement this method
-    false
+    val clazz: Class[_] = classLoader.loadClass(className)
+    
+    log(s"isJavaTransient - Checking field ${sym.name.decoded}")
+    
+    java.lang.reflect.Modifier.isTransient(clazz.getDeclaredField(sym.name.decoded).getModifiers())
   }
   
   def hasTransientAnnotation(sym: Symbol): Boolean = {

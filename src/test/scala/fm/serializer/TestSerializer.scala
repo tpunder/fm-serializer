@@ -297,7 +297,7 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     foo2.getIgnoredField2 should equal (null)
     
     // This will fail until proper java transient field detection is in place
-    //foo2.getIgnoredField4 should equal (null)
+    foo2.getIgnoredField4 should equal (null)
   }
   
   //===============================================================================================
