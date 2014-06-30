@@ -57,7 +57,15 @@ object Macros {
     tryMakeObjectDeserializer[T] getOrElse { c.abort(c.enclosingPosition, s"Couldn't make ObjectDeserializer for $tpe") }
   }
   
-  def makeSerializer[T: c.WeakTypeTag](c: Context): c.Expr[Serializer[T]] = wrap(c, s"makeSerializer[${c.weakTypeOf[T]}]") {
+  def makeSerializerNoImplicits[T: c.WeakTypeTag](c: Context): c.Expr[Serializer[T]] = wrap(c, s"makeSerializerNoImplicits[${c.weakTypeOf[T]}]") {
+    makeSerializer[T](allowImplicits = false)(c)
+  }
+  
+  def makeSerializerAllowImplicits[T: c.WeakTypeTag](c: Context): c.Expr[Serializer[T]] = wrap(c, s"makeSerializerAllowImplicits[${c.weakTypeOf[T]}]") {
+    makeSerializer[T](allowImplicits = true)(c)
+  }
+  
+  def makeSerializer[T: c.WeakTypeTag](allowImplicits: Boolean)(c: Context): c.Expr[Serializer[T]] = wrap(c, s"makeSerializer[${c.weakTypeOf[T]}]") {
     
     object helpers extends MacroHelpers(isDebug){ val ctx: c.type = c }
     import helpers._

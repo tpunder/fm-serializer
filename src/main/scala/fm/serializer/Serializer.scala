@@ -18,11 +18,17 @@ package fm.serializer
 import fm.serializer.protobuf.ProtobufOutput
 
 object Serializer extends SerializerLowPrioImplicits with PrimitiveImplicits with CommonTypeImplicits {
-
+  /**
+   * Call this for creating an "implicit val" that can be picked up by serialize() calls
+   */
+  def make[T]: Serializer[T] = macro Macros.makeSerializerNoImplicits[T]
 }
 
 trait SerializerLowPrioImplicits {
-  implicit def makeSerializer[T]: Serializer[T] = macro Macros.makeSerializer[T]
+  /**
+   * This should NOT be called directly (use Serializer.make instead).
+   */
+  implicit def implicitMakeSerializer[T]: Serializer[T] = macro Macros.makeSerializerAllowImplicits[T]
 }
 
 trait Serializer[@specialized T] extends RawSerializer[T] with NestedSerializer[T] with FieldSerializer[T] {

@@ -21,7 +21,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import fm.serializer.fastutil.FastByteArrayOutputStream
 
 object JSON {
-  private val jsonOutput: ThreadLocal[JSONOutput] = new ThreadLocal[JSONOutput]{
+  private[this] val jsonOutput: ThreadLocal[JSONOutput] = new ThreadLocal[JSONOutput]{
     override protected def initialValue: JSONOutput = new JSONOutput()
   }
   
