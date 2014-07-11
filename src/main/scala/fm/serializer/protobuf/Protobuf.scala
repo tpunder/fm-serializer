@@ -18,6 +18,7 @@ package fm.serializer.protobuf
 import java.io.{InputStream, OutputStream}
 import fm.serializer.{Deserializer, Serializer}
 import fm.serializer.LinkedByteArrayOutputStream
+import fm.serializer.base64.Base64
 import fm.serializer.fastutil.FastByteArrayOutputStream
 import fm.serializer.FMByteArrayOutputStream
 
@@ -85,5 +86,21 @@ object Protobuf {
   
   def fromInputStream[@specialized T](is: InputStream)(implicit deserializer: Deserializer[T]): T = {
     deserializer.deserializeRaw(new ProtobufInputStreamInput(is))
+  }
+  
+  def toBase64String[@specialized T](v: T)(implicit serializer: Serializer[T]): String = {
+    Base64.encodeBytes(toBytes[T](v))
+  }
+  
+  def fromBase64String[@specialized T](str: String)(implicit deserializer: Deserializer[T]): T = {
+    fromBytes[T](Base64.decode(str))
+  }
+  
+  def toBase64URLSafeString[@specialized T](v: T)(implicit serializer: Serializer[T]): String = {
+    Base64.encodeBytes(toBytes[T](v), Base64.URL_SAFE)
+  }
+  
+  def fromBase64URLSafeString[@specialized T](str: String)(implicit deserializer: Deserializer[T]): T = {
+    fromBytes[T](Base64.decode(str, Base64.URL_SAFE))
   }
 }
