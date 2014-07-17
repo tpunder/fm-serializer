@@ -44,6 +44,8 @@ Usage
 
     require(hello == hello2)
 
+More complex examples are in [TestSerializer.scala](https://github.com/frugalmechanic/fm-serializer/blob/master/src/test/scala/fm/serializer/TestSerializer.scala)
+
 Authors
 -------
 
