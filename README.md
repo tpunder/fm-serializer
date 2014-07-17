@@ -5,10 +5,44 @@ Frugal Mechanic Serializer
 
 This is our Scala macro-based serialization library.
 
+Features
+--------
+
+* **FAST** (TODO: Publish modified jvm-serializers code and results)
+* Automatic generation of serializers/deserializers at compile time (via Scala Macros)
+* No Boilerplate
+* Support for **case classes**, **POJOs**, **Scala Collections**, **Java Collections**, etc...
+
+Formats
+-------
+
+* Modified Protocol Buffers (TODO: Document the modifications)
+* JSON
+
 Usage
 -----
 
-TODO
+**Modified Protocol Buffers**
+
+    import fm.serializer.protobuf.Protobuf
+    case class Hello(name: String, list: List[Int])
+    val hello = Hello("World", List(1,2,3,4,5))
+    
+    val bytes: Array[Byte] = Protobuf.toBytes(hello)
+    val hello2: Hello = Protobuf.fromBytes[Hello](bytes)
+    
+    require(hello == hello2)
+
+**JSON**
+
+    import fm.serializer.json.JSON
+    case class Hello(name: String, list: List[Int])
+    val hello = Hello("World", List(1,2,3,4,5))
+
+    val json: String = JSON.toJSON(hello)
+    val hello2: Hello = JSON.fromJSON[Hello](json)
+
+    require(hello == hello2)
 
 Authors
 -------
