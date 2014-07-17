@@ -34,6 +34,8 @@ import fm.serializer.FMByteArrayOutputStream
  *  - Optionally uses packed repeated fields for numeric types
  */
 final class ProtobufOutput() extends Output {
+  def allowStringMap: Boolean = false
+  
   private[this] val MaxVarint32Bytes: Int = 5
   private[this] val MaxVarint64Bytes: Int = 10
   private[this] val EncodeMessagesAsGroups: Boolean = true

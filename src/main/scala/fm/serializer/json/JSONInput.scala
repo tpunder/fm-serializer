@@ -21,6 +21,8 @@ import fm.serializer.{CollectionInput, FieldInput, NestedInput, Input}
 import fm.serializer.base64.Base64
 
 abstract class JSONInput extends Input {
+  def allowStringMap: Boolean = true
+  
   private[this] var inObject: Boolean = false
   private[this] var inArray: Boolean = false
   private[this] var isFirst: Boolean = false
@@ -94,20 +96,9 @@ abstract class JSONInput extends Input {
   // FIELD Input
   //
   def readFieldNumber(nameToNumMap: Map[String, Int]): Int = {
-    handleFieldComma()
-    skipWhitespace()
+    val name: String = readFieldName()
     
-    // Check for End Of Object
-    if (peek == '}') return 0
-    
-    // Otherwise we expect a field name
-    val name: String = readRawString()
-    
-    // Followed by optional whitespace
-    skipWhitespace()
-    
-    // Followed by a colon
-    require(next == ':', "Expected : character after the field name")
+    if (null == name) return 0
     
     try {
       // Exact name match
@@ -119,6 +110,25 @@ abstract class JSONInput extends Input {
         if (nameToNumMap.contains(lowerName)) nameToNumMap(lowerName)
         else nameToNumMap.find{ case (n,i) => n.toLowerCase == lowerName }.map{ _._2 }.getOrElse(-1)
     }
+  }
+  
+  def readFieldName(): String = {
+    handleFieldComma()
+    skipWhitespace()
+    
+    // Check for End Of Object
+    if (peek == '}') return null
+    
+    // Otherwise we expect a field name
+    val name: String = readRawString()
+    
+    // Followed by optional whitespace
+    skipWhitespace()
+    
+    // Followed by a colon
+    require(next == ':', "Expected : character after the field name")
+    
+    name
   }
   
   def skipUnknownField(): Unit = {

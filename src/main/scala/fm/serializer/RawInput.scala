@@ -20,7 +20,9 @@ package fm.serializer
  * 
  * See documentation for Input/Output traits
  */
-trait RawInput {  
+trait RawInput {
+  def allowStringMap: Boolean
+  
   // Basic Types
   def readRawBool(): Boolean
   def readRawFloat(): Float

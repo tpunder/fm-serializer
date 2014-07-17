@@ -34,7 +34,8 @@ import fm.serializer.fastutil.FastByteArrayOutputStream
  *  - Optionally uses packed repeated fields for numeric types
  */
 final class ProtobufOutputStreamOutput(private var os: OutputStream) extends Output {
-
+  def allowStringMap: Boolean = false
+  
   private def writeRawByte(byte: Int): Unit = os.write(byte)  
   private def writeRawBytes(bytes: Array[Byte]): Unit = os.write(bytes)
   

@@ -21,6 +21,8 @@ package fm.serializer
  * See the documentation for Output
  */
 trait RawOutput {
+  def allowStringMap: Boolean
+  
   // Basic Types
   def writeRawBool(value: Boolean): Unit
   def writeRawFloat(value: Float): Unit

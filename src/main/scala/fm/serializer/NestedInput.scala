@@ -20,7 +20,9 @@ package fm.serializer
  * 
  * See documentation for Input/Output traits
  */
-trait NestedInput {  
+trait NestedInput {
+  def allowStringMap: Boolean
+  
   // Basic Types
   def readNestedBool(): Boolean
   def readNestedFloat(): Float

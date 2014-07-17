@@ -21,6 +21,8 @@ package fm.serializer
  * See the documentation for Output
  */
 trait FieldOutput {
+  def allowStringMap: Boolean
+  
   // Basic Types
   def writeFieldBool(number: Int, name: String, value: Boolean): Unit
   def writeFieldFloat(number: Int, name: String, value: Float): Unit

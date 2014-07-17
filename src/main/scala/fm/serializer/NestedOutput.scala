@@ -21,6 +21,8 @@ package fm.serializer
  * See the documentation for Output
  */
 trait NestedOutput {
+  def allowStringMap: Boolean
+  
   // Basic Types
   def writeNestedBool(value: Boolean): Unit
   def writeNestedFloat(value: Float): Unit

@@ -504,7 +504,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
       
     Option(tree).map{ ctx.Expr[Deserializer[T]](_) }
   }
-  
+ 
   /**
    * Lookup a Collection Serializer
    */
@@ -514,16 +514,23 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     log(s"findCollectionSerializer($tpe)")
     
     Vector(
-      checkCollectionSerializer[T](tpe, typeOf[TraversableOnce[_]], typeOf[TraversableOnceSerializer[_,_]]),
-      checkCollectionSerializer[T](tpe, typeOf[JavaIterable[_]], typeOf[JavaIterableSerializer[_,_]])
+      checkCollectionSerializer[T](tpe, typeOf[TraversableOnce[(String,_)]], typeOf[StringMapSerializer[_,_]], true),
+      checkCollectionSerializer[T](tpe, typeOf[TraversableOnce[_]], typeOf[TraversableOnceSerializer[_,_]], false),
+      checkCollectionSerializer[T](tpe, typeOf[JavaIterable[_]], typeOf[JavaIterableSerializer[_,_]], false)
     ).flatten.headOption
   }
   
-  private def checkCollectionSerializer[T](tpe: Type, colType: Type, serializerType: Type): Option[Expr[Serializer[T]]] = {
+  private def checkCollectionSerializer[T](tpe: Type, colType: Type, serializerType: Type, useTupleValueAsElem: Boolean): Option[Expr[Serializer[T]]] = {
     log(s"checkCollection($tpe, $colType, $serializerType)")
     
     val tree: Tree = if (tpe <:< colType) {
-      val elem: Type = extractSingleTypeParamAsSeenFrom(tpe, colType)
+      val typeParam: Type = extractSingleTypeParamAsSeenFrom(tpe, colType)
+      
+      val elem: Type = if (useTupleValueAsElem) {
+        val List(_,valueTpe) = extractTypeParamAsSeenFrom(typeParam, typeOf[(_,_)])
+        valueTpe
+      } else typeParam
+      
       val name: TermName = newTermName(ctx.fresh("colSerializer"))
       
       log(s"  elem: $elem,  name: $name")
@@ -570,27 +577,53 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     
     val elemTpe: Type = elemTpeOpt.get
     
+    val tree: Tree = if (elemTpe <:< typeOf[(String,_)]) makeStringMapCollectionDeserializer(tpe, elemTpe) else makeNormalCollectionDeserializer(tpe, elemTpe)
+        
+    Option(tree).map{ ctx.Expr[Deserializer[T]](_) }
+  }
+  
+  def makeNormalCollectionDeserializer(tpe: Type, elemTpe: Type): Tree = {
     val name: TermName = newTermName(ctx.fresh("colDeserializer"))
     
     val isTrait: Boolean = tpe.typeSymbol.asClass.isTrait
+       
+    if (hasImplicit(appliedType(typeOf[CanBuildFrom[_,_,_]], List(WildcardType, elemTpe, tpe)))) {
+      q"implicit val $name: fm.serializer.Deserializer[$tpe] = new fm.serializer.CanBuildFromDeserializer[$elemTpe, $tpe](); $name"
+    } else if (tpe <:< typeOf[Growable[_]] && hasNoArgsConstructor(tpe)) {
+      q"implicit val $name: fm.serializer.Deserializer[$tpe] = new fm.serializer.GrowableDeserializer[$elemTpe, $tpe](new $tpe); $name"
+    } else if (tpe <:< typeOf[Vector[_]]) {
+      q"implicit val $name: fm.serializer.Deserializer[$tpe] = fm.serializer.CanBuildFromDeserializer.forVector[$elemTpe, $tpe](); $name"
+    } else if (tpe <:< typeOf[JavaCollection[_]]) {
+      // TODO: make this more robust
+      val newTpe: Tree = if (isTrait) q"new java.util.ArrayList[$elemTpe]()" else q"new $tpe" 
+      q"implicit val $name: fm.serializer.Deserializer[$tpe] = new fm.serializer.JavaCollectionDeserializer[$elemTpe, $tpe]($newTpe); $name"
+    } else {
+      null
+    }
+  }
+  
+  def makeStringMapCollectionDeserializer(tpe: Type, elemTpe: Type): Tree = {
+    require(elemTpe <:< typeOf[(String,_)], s"Expected elemTpe $elemTpe to be <:< (String,_)")
     
-    val tree: Tree =   
-      if (hasImplicit(appliedType(typeOf[CanBuildFrom[_,_,_]], List(WildcardType, elemTpe, tpe)))) {
-        q"implicit val $name: fm.serializer.Deserializer[$tpe] = new fm.serializer.CanBuildFromDeserializer[$elemTpe, $tpe](); $name"
-      } else if (tpe <:< typeOf[Growable[_]]) {
-        // TODO: check/warn on lack of no-args constructor
-        q"implicit val $name: fm.serializer.Deserializer[$tpe] = new fm.serializer.GrowableDeserializer[$elemTpe, $tpe](new $tpe); $name"
-      } else if (tpe <:< typeOf[Vector[_]]) {
-        q"implicit val $name: fm.serializer.Deserializer[$tpe] = fm.serializer.CanBuildFromDeserializer.forVector[$elemTpe, $tpe](); $name"
-      } else if (tpe <:< typeOf[JavaCollection[_]]) {
-        // TODO: make this more robust
-        val newTpe: Tree = if (isTrait) q"new java.util.ArrayList[$elemTpe]()" else q"new $tpe" 
-        q"implicit val $name: fm.serializer.Deserializer[$tpe] = new fm.serializer.JavaCollectionDeserializer[$elemTpe, $tpe]($newTpe); $name"
-      } else {
-        null
-      }
-        
-    Option(tree).map{ ctx.Expr[Deserializer[T]](_) }
+    val List(_,valueTpe) = extractTypeParamAsSeenFrom(elemTpe, typeOf[(_,_)])
+    
+    val name: TermName = newTermName(ctx.fresh("colDeserializer"))
+    
+    val isTrait: Boolean = tpe.typeSymbol.asClass.isTrait
+       
+    if (hasImplicit(appliedType(typeOf[CanBuildFrom[_,_,_]], List(WildcardType, elemTpe, tpe)))) {
+      q"implicit val $name: fm.serializer.Deserializer[$tpe] = new fm.serializer.StringMapCanBuildFromDeserializer[$valueTpe, $tpe](); $name"
+    } else if (tpe <:< typeOf[Growable[_]] && hasNoArgsConstructor(tpe)) {
+      q"implicit val $name: fm.serializer.Deserializer[$tpe] = new fm.serializer.StringMapGrowableDeserializer[$valueTpe, $tpe](new $tpe); $name"
+    } else if (tpe <:< typeOf[Vector[_]]) {
+      q"implicit val $name: fm.serializer.Deserializer[$tpe] = fm.serializer.StringMapCanBuildFromDeserializer.forVector[$valueTpe, $tpe](); $name"
+    } else if (tpe <:< typeOf[JavaCollection[_]]) {
+      ???
+      //val newTpe: Tree = if (isTrait) q"new java.util.ArrayList[$elemTpe]()" else q"new $tpe" 
+      //q"implicit val $name: fm.serializer.Deserializer[$tpe] = new fm.serializer.JavaCollectionDeserializer[$elemTpe, $tpe]($newTpe); $name"
+    } else {
+      null
+    }
   }
   
   def hasImplicit(implicitTpe: Type, withMacrosDisabled: Boolean = false): Boolean = getImplicit(implicitTpe, withMacrosDisabled).isDefined
@@ -941,9 +974,13 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
    * e.g. extractSingleTypeParamAsSeenFrom[Map[String,Int]](typeOf[TraversableOnce[_]]) => (String,Int)
    */
   def extractSingleTypeParamAsSeenFrom(tpe: Type, baseType: Type): Type = {
-    require(tpe <:< baseType, s"Expected: $tpe <:< $baseType")
-    val List(arg) = typeArgsFor(tpe.baseType(baseType.typeSymbol))
+    val List(arg) = extractTypeParamAsSeenFrom(tpe, baseType)
     arg
+  }
+  
+  def extractTypeParamAsSeenFrom(tpe: Type, baseType: Type): List[Type] = {
+    require(tpe <:< baseType, s"Expected: $tpe <:< $baseType")
+    typeArgsFor(tpe.baseType(baseType.typeSymbol))
   }
   
   def substituteGenericTypes(tpe: Type): Type = {

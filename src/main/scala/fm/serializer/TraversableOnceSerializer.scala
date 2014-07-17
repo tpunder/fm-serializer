@@ -50,8 +50,4 @@ final class TraversableOnceSerializer[@specialized T, Col <: TraversableOnce[T]]
       col.foreach{ elem: T => elemSerializer.serializeNested(out, elem) }
     }
   }
-  
-//  private[this] def serializeElems(out: NestedOutput, col: Col): Unit = {
-//    col.foreach{ elem: T => elemSerializer.serializeNested(out, elem) }
-//  }
 }

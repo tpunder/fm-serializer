@@ -21,6 +21,8 @@ package fm.serializer
  * This the extra methods for reading FIELD input along with the NestedInput methods
  */
 trait FieldInput extends NestedInput {
+  def allowStringMap: Boolean
+  
   /**
    * This is for reading fields of an object.
    * 
@@ -28,6 +30,14 @@ trait FieldInput extends NestedInput {
    * Returns 0 if we've reached the end of the object/message
    */
   def readFieldNumber(nameToNumMap: Map[String, Int]): Int
+  
+  /**
+   * If dynamic string maps are supported then this should be implemented
+   * otherwise this can just throw an exception.
+   * 
+   * null should be returns on the end of an object/message
+   */
+  def readFieldName(): String
   
   /**
    * Skip an unknown field value.

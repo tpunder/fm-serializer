@@ -20,6 +20,8 @@ import fm.serializer.{CollectionInput, FieldInput, NestedInput, Input}
 
 abstract class ProtobufInput extends Input {
  
+  def allowStringMap: Boolean = false
+  
   //
   // FIELD Input Implementation
   //
@@ -31,6 +33,9 @@ abstract class ProtobufInput extends Input {
     val tag: Int = readTag()
     WireFormat.getTagFieldNumber(tag)
   }
+  
+  // Since allowStringMap is false this doesn't need to be implemented
+  def readFieldName(): String = ???
   
   // Skip an unknown field
   final def skipUnknownField() {

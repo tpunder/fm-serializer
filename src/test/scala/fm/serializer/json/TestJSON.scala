@@ -21,4 +21,22 @@ import fm.serializer.{Deserializer, Primitive, Serializer}
 final class TestJSON extends fm.serializer.TestSerializer[String]  {
   def serialize[T](v: T)(implicit ser: Serializer[T]): String = JSON.toJSON[T](v)
   def deserialize[T](json: String)(implicit deser: Deserializer[T]): T = JSON.fromJSON[T](json)
+  
+  test("String Map - Treated as object") {
+    val map: Map[String,Int] = Map("foo" -> 123, "bar" -> 321)
+    val json: String = serialize(map)
+    
+    json should equal ("""{"foo":123,"bar":321}""")
+    
+    deserialize[Map[String,Int]](json) should equal (map)
+  }
+  
+  test("Int Map - Treated as array of tuples") {
+    val map: Map[Int,String] = Map(123 -> "foo", 312 -> "bar")
+    val json: String = serialize(map)
+    
+    json should equal ("""[{"_1":123,"_2":"foo"},{"_1":312,"_2":"bar"}]""")
+    
+    deserialize[Map[Int,String]](json) should equal (map)
+  }
 }

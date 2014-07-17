@@ -23,6 +23,8 @@ import java.nio.charset.StandardCharsets.UTF_8
 final class JSONOutput(outputNulls: Boolean = true) extends Output {
   import JSONOutput._
   
+  def allowStringMap: Boolean = true
+  
   private[this] val out: FMByteArrayOutputStream = new FMByteArrayOutputStream()
   
   private[this] var inObjectOrArray: Boolean = false
