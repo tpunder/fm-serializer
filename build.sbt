@@ -6,9 +6,9 @@ version := "0.1.0-SNAPSHOT"
 
 description := "LazySeq"
 
-scalaVersion := "2.11.1"
+scalaVersion := "2.11.2"
 
-crossScalaVersions := Seq("2.10.4", "2.11.1")
+crossScalaVersions := Seq("2.10.4", "2.11.2")
 
 // Needed for the JavaBean tests to work
 compileOrder := CompileOrder.JavaThenScala
@@ -21,8 +21,8 @@ libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-reflect" % _)
 // Enable the Macro Paradise Compiler Plugin for Scala 2.10
 libraryDependencies <++= (scalaVersion){ sv =>
   if (sv.startsWith("2.10")) Seq (
-    compilerPlugin("org.scalamacros" % "paradise" % "2.0.0" cross CrossVersion.full),
-    "org.scalamacros" %% "quasiquotes" % "2.0.0"
+    compilerPlugin("org.scalamacros" % "paradise" % "2.0.1" cross CrossVersion.full),
+    "org.scalamacros" %% "quasiquotes" % "2.0.1"
   ) else Nil
 }
 
