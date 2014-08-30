@@ -2,7 +2,7 @@ FMPublic
 
 name := "fm-serializer"
 
-version := "0.1.0-SNAPSHOT"
+version := "0.1.0"
 
 description := "LazySeq"
 
