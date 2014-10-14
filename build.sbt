@@ -2,9 +2,9 @@ FMPublic
 
 name := "fm-serializer"
 
-version := "0.1.0"
+version := "0.2.0-SNAPSHOT"
 
-description := "LazySeq"
+description := "Scala Macro Based Serialization"
 
 scalaVersion := "2.11.2"
 
