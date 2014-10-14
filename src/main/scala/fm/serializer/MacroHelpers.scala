@@ -350,8 +350,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     // annotations on constructor params (for non-abstract classes)
     val constructorParams: Vector[FieldImpl] = if (isAbstract) Vector.empty else for {
       ctor <- tpe.member(nme.CONSTRUCTOR).asTerm.alternatives.toVector
-      params <- ctor.asMethod.paramss // TODO: Handle multiple parameter lists
-      (param, idx) <- params.zipWithIndex
+      (param, idx) <- ctor.asMethod.paramss.flatten.zipWithIndex // TODO: Handle multiple parameter lists
       ann <- param.annotations
       if ann.tpe =:= annotationTpe
     } yield {
@@ -400,6 +399,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
       case Seq(int(number), string(name), string(getter), string(setter), ser) => FieldImpl(number, name, getter, setter, -1, ser, ser)
       case Seq(int(number), string(name), ser) => FieldImpl(number, name, null, null, -1, ser, ser)
       case Seq(int(number), ser) => FieldImpl(number, defaultName, null, null, -1, ser, ser)
+      case Seq(ser) => FieldImpl(-1, defaultName, null, null, -1, ser, ser)
     }
   }
   

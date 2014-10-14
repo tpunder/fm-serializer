@@ -342,7 +342,31 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     concrete.linked.name should equal (person.linked.name)
     concrete.linked.age should equal (person.linked.age)
     concrete.linked.linked should equal (null)
+
+  }
+  
+  //===============================================================================================
+  // Specifying a Serializer/Deserializer via @Field annotations
+  //===============================================================================================
+  
+  case class NonCompressedNums(
+    @Field(1, fm.serializer.Primitive.fixedInt) fixedInt: Int,
+    @Field(2, fm.serializer.Primitive.fixedLong) fixedLong: Long
+  )
+  
+  test("Specifying FixedInt/FixedLong instead of the default int/long serializer") {
+    val obj = NonCompressedNums(123, 321L)
     
+    val bytes: BYTES = serialize(obj)
     
+    if (bytes.isInstanceOf[Array[Byte]]) {
+      val b: Array[Byte] = bytes.asInstanceOf[Array[Byte]]
+      println("BYTES: "+b.toSeq)
+    }
+
+    val obj2: NonCompressedNums = deserialize[NonCompressedNums](bytes)
+    
+    obj2.fixedInt should equal (obj.fixedInt)
+    obj2.fixedLong should equal (obj.fixedLong)
   }
 }
