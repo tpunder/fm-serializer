@@ -15,6 +15,7 @@
  */
 package fm.serializer
 
+import java.io.File
 import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
 import java.util.{Date => JavaDate}
 
@@ -30,6 +31,8 @@ trait CommonTypeImplicits {
 //    protected def serialize(obj: JavaBigInteger): Array[Byte] = obj.toByteArray
 //    protected def deserialize(value: Array[Byte]): JavaBigInteger = new JavaBigInteger(value)
 //  }
+  
+  implicit val javaFile: MappedSimpleSerializer[String,File] = Primitive.string.map(_.toString, new File(_), null)
   
   implicit val javaBigInteger: MappedSimpleSerializer[Array[Byte],JavaBigInteger] = Primitive.byteArray.map(_.toByteArray, new JavaBigInteger(_), null)
   

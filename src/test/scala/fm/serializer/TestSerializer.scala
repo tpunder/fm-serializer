@@ -15,6 +15,7 @@
  */
 package fm.serializer
 
+import java.io.File
 import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
 import java.util.Date
 import org.scalatest.{FunSuite, Matchers}
@@ -142,7 +143,8 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     bar: Bar = Bar(),
     barOpt: Option[Bar] = Some(Bar(next = Some(Bar("next", 321, Some(Bar()))))),
     barList: List[Bar] = List(Bar("one", 1), Bar("two", 2, Some(Bar("nested", 999, Some(Bar("nest2", 111))))), Bar("three", 3)),
-    foo: Option[Foo] = Some(Foo(foo = None))
+    foo: Option[Foo] = Some(Foo(foo = None)),
+    file: File = new File("/foo/bar/file.ext")
   )
   
   private def IntLengths: Vector[Int] = Vector(1,10,100,1000,10000,100000,1000000,10000000,100000000,1000000000)
