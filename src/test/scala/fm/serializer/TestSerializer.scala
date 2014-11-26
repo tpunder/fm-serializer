@@ -280,6 +280,7 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     val foo: FooJavaBean = new FooJavaBean()
     foo.setName("Hello World")
     foo.setNumber(123)
+    foo.setBool(true)
     foo.setFooEnum(FooEnum.Bar)
     foo.setList(Vector("aa", "bb", "cc").asJava)
     foo.getListWithoutSetter().addAll(Vector("One", "Two", "Three").asJava)
@@ -292,6 +293,7 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     
     foo2.getName should equal (foo.getName)
     foo2.getNumber should equal (foo.getNumber)
+    foo2.isBool should equal (foo.isBool)
     foo2.getFooEnum should equal (foo.getFooEnum)
     foo2.getList.asScala should equal (foo.getList.asScala)
     foo2.getListWithoutSetter.asScala should equal (foo.getListWithoutSetter.asScala)
@@ -306,13 +308,14 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
   // Java Beans Immutable
   //===============================================================================================
   test("FooJavaBeanImmutable") {
-    val foo: FooJavaBeanImmutable = new FooJavaBeanImmutable("Hello World", 123, FooEnum.Bar, Vector("aa", "bb", "cc").asJava)
+    val foo: FooJavaBeanImmutable = new FooJavaBeanImmutable("Hello World", 123, true, FooEnum.Bar, Vector("aa", "bb", "cc").asJava)
     
     val bytes: BYTES = serialize(foo)
     val foo2: FooJavaBeanImmutable = deserialize[FooJavaBeanImmutable](bytes)
     
     foo2.getName should equal (foo.getName)
     foo2.getNumber should equal (foo.getNumber)
+    foo2.isBool should equal (foo.isBool)
     foo2.getFooEnum should equal (foo.getFooEnum)
     foo2.getList.asScala should equal (foo.getList.asScala)
   }

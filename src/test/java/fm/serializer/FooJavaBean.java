@@ -8,6 +8,7 @@ import javax.xml.bind.annotation.XmlTransient;
 public class FooJavaBean {
   protected String name;
   protected int number;
+  protected Boolean bool;
   protected FooEnum fooEnum;
   protected List<String> list;
   protected List<String> listWithoutSetter;
@@ -31,6 +32,14 @@ public class FooJavaBean {
   
   public void setNumber(int value) {
     this.number = value;
+  }
+  
+  public Boolean isBool() {
+    return bool;
+  }
+  
+  public void setBool(Boolean value) {
+    this.bool = value;
   }
   
   public FooEnum getFooEnum() {

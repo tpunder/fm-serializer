@@ -1164,7 +1164,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     log(s"  Getters: $getters")
     log(s"  Setters: $setters")
     
-    def findGetter(field: TermSymbol): Option[MethodSymbol] = getters.find{ _.name.decoded.toLowerCase.trim == "get"+field.name.decoded.toLowerCase.trim }
+    def findGetter(field: TermSymbol): Option[MethodSymbol] = getters.find{ m: MethodSymbol => Seq("get"+field.name.decoded.toLowerCase.trim, "is"+field.name.decoded.toLowerCase.trim).contains(m.name.decoded.toLowerCase.trim) }
     def findSetter(field: TermSymbol): Option[MethodSymbol] = setters.find{ _.name.decoded.toLowerCase.trim == "set"+field.name.decoded.toLowerCase.trim }
     
     // We need to match up fields/getters/setters
@@ -1288,7 +1288,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
   def javaBeanGetters(tpe: Type): Vector[MethodSymbol] = {
     getPublicMethodForType(tpe).filter{ isNoArgsMethod }.filter{ m: MethodSymbol =>
       val name: String = m.name.decoded
-      val isGetter: Boolean = name.startsWith("get") || (m.returnType =:= typeOf[Boolean] && name.startsWith("is"))
+      val isGetter: Boolean = name.startsWith("get") || ((m.returnType =:= typeOf[Boolean]  || m.returnType =:= typeOf[java.lang.Boolean]) && name.startsWith("is"))
       
       isGetter && name != "getClass" && name != "isInstanceOf"
     }
