@@ -143,8 +143,8 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     bar: Bar = Bar(),
     barOpt: Option[Bar] = Some(Bar(next = Some(Bar("next", 321, Some(Bar()))))),
     barList: List[Bar] = List(Bar("one", 1), Bar("two", 2, Some(Bar("nested", 999, Some(Bar("nest2", 111))))), Bar("three", 3)),
-    foo: Option[Foo] = Some(Foo(foo = None)),
-    file: File = new File("/foo/bar/file.ext")
+    foo: Option[Foo] = Some(Foo(foo = None))
+    // Don't add more to this class (it already has 22 items) until we stop supporting Scala 2.10.x
   )
   
   private def IntLengths: Vector[Int] = Vector(1,10,100,1000,10000,100000,1000000,10000000,100000000,1000000000)
@@ -154,6 +154,7 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     string: String = "bar",
     int: Int = 123,    
     next: Option[Bar] = None,
+    file: File = new File("/foo/bar/file.ext"),
     //
     // Using this class for overflow since it would put Foo over the 22 case class param limit:
     //
