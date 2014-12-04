@@ -17,6 +17,7 @@ package fm.serializer
 
 import java.io.File
 import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
+import java.util.{Calendar => JavaCalendar}
 import java.util.{Date => JavaDate}
 
 /**
@@ -37,6 +38,12 @@ trait CommonTypeImplicits {
   implicit val javaBigInteger: MappedSimpleSerializer[Array[Byte],JavaBigInteger] = Primitive.byteArray.map(_.toByteArray, new JavaBigInteger(_), null)
   
   implicit val javaDate: MappedSimpleSerializer[Long,JavaDate] = Primitive.long.map(_.getTime, new JavaDate(_), null)
+  
+  implicit val javaCalendar: MappedSimpleSerializer[Long,JavaCalendar] = Primitive.long.map(_.getTime.getTime, { millis: Long => 
+    val calendar: JavaCalendar = JavaCalendar.getInstance()
+    calendar.setTimeInMillis(millis)
+    calendar
+  }, null)
   
 //  implicit val javaDate: MappedSimpleSerializer[Long,JavaDate] = new MappedSimpleSerializer[Long,JavaDate](Primitive.long, new Mapper[Long,JavaDate]{
 //    def defaultValue: JavaDate = null
