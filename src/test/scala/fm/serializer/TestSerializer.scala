@@ -284,7 +284,15 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     caseLike2.name should equal (caseLike.name)
     caseLike2.age should equal (caseLike.age)
   }
-  
+
+
+  test("FooJavaBeanContainer") {
+    val container: FooJavaBeanContainer = new FooJavaBeanContainer()
+    
+    val bytes: BYTES = serialize(container)
+    val container2: FooJavaBeanContainer = deserialize[FooJavaBeanContainer](bytes)
+  }
+      
   //===============================================================================================
   // Java Beans
   //===============================================================================================
@@ -294,6 +302,11 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     foo.setNumber(123)
     foo.setBool(true)
     foo.setFooEnum(FooEnum.Bar)
+    foo.setChildren(Vector({
+      val child: FooJavaBean = new FooJavaBean()
+      child.setName("Hello World Child")
+      child
+    }).asJava)
     foo.setList(Vector("aa", "bb", "cc").asJava)
     foo.getListWithoutSetter().addAll(Vector("One", "Two", "Three").asJava)
     foo.setIgnoredField1("ignored1")
@@ -307,6 +320,7 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     foo2.getNumber should equal (foo.getNumber)
     foo2.isBool should equal (foo.isBool)
     foo2.getFooEnum should equal (foo.getFooEnum)
+    foo2.getChildren.asScala should equal(foo.getChildren.asScala)
     foo2.getList.asScala should equal (foo.getList.asScala)
     foo2.getListWithoutSetter.asScala should equal (foo.getListWithoutSetter.asScala)
     foo2.getIgnoredField1 should equal (null)

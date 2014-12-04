@@ -10,6 +10,7 @@ public class FooJavaBean {
   protected int number;
   protected Boolean bool;
   protected FooEnum fooEnum;
+  protected List<FooJavaBean> children;
   protected List<String> list;
   protected List<String> listWithoutSetter;
   
@@ -48,6 +49,14 @@ public class FooJavaBean {
   
   public void setFooEnum(FooEnum value) {
     this.fooEnum = value;
+  }
+  
+  public List<FooJavaBean> getChildren() {
+    return children;
+  }
+  
+  public void setChildren(List<FooJavaBean> value) {
+    this.children = value;
   }
   
   public List<String> getList() {
