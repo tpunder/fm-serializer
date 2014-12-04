@@ -30,6 +30,13 @@ object JSON {
     new String(bytes, UTF_8)
   }
   
+  def toPrettyJSON[@specialized T](v: T)(implicit serializer: Serializer[T]): String = {
+    val out: JSONOutput =  new JSONOutput(outputNulls = true, prettyFormat = true)
+    serializer.serializeRaw(out, v)
+    val bytes: Array[Byte] = out.toByteArray
+    new String(bytes, UTF_8)
+  }
+
   def toBytes[@specialized T](v: T)(implicit serializer: Serializer[T]): Array[Byte] = {
     val out: JSONOutput = jsonOutput.get
     serializer.serializeRaw(out, v)
