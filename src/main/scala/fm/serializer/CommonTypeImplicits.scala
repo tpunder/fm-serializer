@@ -70,8 +70,12 @@ trait CommonTypeImplicits {
   
   //
   // Joda Time
-  //
-  import org.joda.time.LocalDate
+  //  
+  implicit val jodaLocalDate: MappedSimpleSerializer[String, org.joda.time.LocalDate] = Primitive.string.map(_.toString, org.joda.time.LocalDate.parse(_), null)
   
-  implicit val jodaLocalDate: MappedSimpleSerializer[String, LocalDate] = Primitive.string.map(_.toString, LocalDate.parse(_), null)
+  //
+  // java.time
+  //
+  
+  implicit val javaLocalDate: MappedSimpleSerializer[String, java.time.LocalDate] = Primitive.string.map(_.toString, java.time.LocalDate.parse(_), null)
 }
