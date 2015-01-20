@@ -20,7 +20,7 @@ import fm.serializer.FMByteArrayOutputStream
 import fm.serializer.base64.Base64
 import java.nio.charset.StandardCharsets.UTF_8
 
-final class JSONOutput(outputNulls: Boolean = true, prettyFormat: Boolean = false) extends Output {
+final class JSONOutput(outputNulls: Boolean = true, prettyFormat: Boolean = false, indent: String = "  ") extends Output {
   import JSONOutput._
   
   def allowStringMap: Boolean = true
@@ -30,37 +30,45 @@ final class JSONOutput(outputNulls: Boolean = true, prettyFormat: Boolean = fals
   
   private[this] var inObjectOrArray: Boolean = false
   private[this] var isFirst: Boolean = false
+  private[this] var objectOrArrayElemCount: Int = 0
   
   def toByteArray: Array[Byte] = out.toByteArray
   def reset(): Unit = out.reset()
   
   private def doIndent(): Unit = {
-    if(level > 0) {
-      out.write("\n")
-      out.write(" " * (level*2)) // two spaces, make this configureable?
-    }
+    out.write("\n")
+    if (level > 0) out.write(indent * level)
   }
   
-  private def doComma(hasWrapperElement: Boolean = false): Unit = {
+  private def doComma(): Unit = {
     if (inObjectOrArray) {
+      objectOrArrayElemCount += 1
+      
       if (isFirst) isFirst = false
       else out.write(',')
       
-      if(prettyFormat && !hasWrapperElement) doIndent()
+      if (prettyFormat) doIndent()
     }
   }
   
-  @inline private def withCommas(f: => Unit): Unit = {
+  @inline private def withCommas(f: => Unit): Int = {
     val prevInObjeftOrArray: Boolean = inObjectOrArray
     val prevIsFirst: Boolean = isFirst
+    val prevObjectOrArrayElemCount: Int = objectOrArrayElemCount
     
     inObjectOrArray = true
     isFirst = true
+    objectOrArrayElemCount = 0
     
     f
     
+    val count: Int = objectOrArrayElemCount
+    
     inObjectOrArray = prevInObjeftOrArray
     isFirst = prevIsFirst
+    objectOrArrayElemCount = prevObjectOrArrayElemCount
+    
+    count
   }
   
   //
@@ -166,9 +174,11 @@ final class JSONOutput(outputNulls: Boolean = true, prettyFormat: Boolean = fals
     } else {
       out.write('{')
       level += 1
-      withCommas{ f(this, obj) }
+      val count: Int = withCommas{ f(this, obj) }
       level -= 1
-      if(prettyFormat) doIndent()
+      if (prettyFormat) {
+        if (count > 0) doIndent() else out.write(' ')
+      }
       out.write('}')
     }
   }
@@ -180,9 +190,11 @@ final class JSONOutput(outputNulls: Boolean = true, prettyFormat: Boolean = fals
     } else {
       out.write('[')
       level += 1
-      withCommas{ f(this, col) }
+      val count: Int = withCommas{ f(this, col) }
       level -= 1
-      if(prettyFormat) doIndent()
+      if (prettyFormat) {
+        if (count > 0) doIndent() else out.write(' ')
+      }
       out.write(']')
     }
   }
@@ -337,6 +349,7 @@ final class JSONOutput(outputNulls: Boolean = true, prettyFormat: Boolean = fals
   private def writeFieldName(name: String): Unit = {
     writeRawString(name)
     out.write(':')
+    if (prettyFormat) out.write(' ')
   }
   
   private def writeNull(): Unit = {
