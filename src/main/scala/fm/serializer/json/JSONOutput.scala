@@ -20,12 +20,13 @@ import fm.serializer.FMByteArrayOutputStream
 import fm.serializer.base64.Base64
 import java.nio.charset.StandardCharsets.UTF_8
 
-final class JSONOutput(outputNulls: Boolean = true) extends Output {
+final class JSONOutput(outputNulls: Boolean = true, prettyFormat: Boolean = false) extends Output {
   import JSONOutput._
   
   def allowStringMap: Boolean = true
   
   private[this] val out: FMByteArrayOutputStream = new FMByteArrayOutputStream()
+  private[this] var level: Int = 0
   
   private[this] var inObjectOrArray: Boolean = false
   private[this] var isFirst: Boolean = false
@@ -33,10 +34,19 @@ final class JSONOutput(outputNulls: Boolean = true) extends Output {
   def toByteArray: Array[Byte] = out.toByteArray
   def reset(): Unit = out.reset()
   
-  private def doComma(): Unit = {
+  private def doIndent(): Unit = {
+    if(level > 0) {
+      out.write("\n")
+      out.write(" " * (level*2)) // two spaces, make this configureable?
+    }
+  }
+  
+  private def doComma(hasWrapperElement: Boolean = false): Unit = {
     if (inObjectOrArray) {
       if (isFirst) isFirst = false
       else out.write(',')
+      
+      if(prettyFormat && !hasWrapperElement) doIndent()
     }
   }
   
@@ -155,7 +165,10 @@ final class JSONOutput(outputNulls: Boolean = true) extends Output {
       writeNull() 
     } else {
       out.write('{')
+      level += 1
       withCommas{ f(this, obj) }
+      level -= 1
+      if(prettyFormat) doIndent()
       out.write('}')
     }
   }
@@ -166,7 +179,10 @@ final class JSONOutput(outputNulls: Boolean = true) extends Output {
       writeNull()
     } else {
       out.write('[')
+      level += 1
       withCommas{ f(this, col) }
+      level -= 1
+      if(prettyFormat) doIndent()
       out.write(']')
     }
   }
