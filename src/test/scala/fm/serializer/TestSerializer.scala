@@ -145,6 +145,8 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     barList: List[Bar] = List(Bar("one", 1), Bar("two", 2, Some(Bar("nested", 999, Some(Bar("nest2", 111))))), Bar("three", 3)),
     foo: Option[Foo] = Some(Foo(foo = None))
     // Don't add more to this class (it already has 22 items) until we stop supporting Scala 2.10.x
+    // Don't add more to this class (it already has 22 items) until we stop supporting Scala 2.10.x
+    // Don't add more to this class (it already has 22 items) until we stop supporting Scala 2.10.x
   )
   
   private def IntLengths: Vector[Int] = Vector(1,10,100,1000,10000,100000,1000000,10000000,100000000,1000000000)
@@ -178,6 +180,9 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     anothermultiByteLongString: String = "\u0024\u00A2\u20AC"*8190,
     // Should deserialize as a Vector
     iterable: Iterable[String] = List("one","two","three")
+    // Don't add more to this class (it already has 22 items) until we stop supporting Scala 2.10.x
+    // Don't add more to this class (it already has 22 items) until we stop supporting Scala 2.10.x
+    // Don't add more to this class (it already has 22 items) until we stop supporting Scala 2.10.x
   )
   
   case class MostlyEmptyFoo(@Field(19) bar: Bar)
