@@ -2,7 +2,7 @@ FMPublic
 
 name := "fm-serializer"
 
-version := "0.2.0"
+version := "0.3.0-SNAPSHOT"
 
 description := "Scala Macro Based Serialization"
 
