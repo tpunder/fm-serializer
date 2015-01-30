@@ -2,11 +2,11 @@ FMPublic
 
 name := "fm-serializer"
 
-version := "0.2.0-SNAPSHOT"
+version := "0.2.0"
 
 description := "Scala Macro Based Serialization"
 
-scalaVersion := "2.11.2"
+scalaVersion := "2.11.5"
 
 crossScalaVersions := Seq("2.10.4", "2.11.5")
 
