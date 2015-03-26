@@ -532,6 +532,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
       } else typeParam
       
       val name: TermName = newTermName(ctx.fresh("colSerializer"))
+      val proxyName: TermName = newTermName(ctx.fresh("colSerializerProxy"))
       
       log(s"  elem: $elem,  name: $name")
       
@@ -541,10 +542,15 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
       
       log(s"  serTpe: $serTpe")
       
-      log(s"implicit val $name: fm.serializer.Serializer[$tpe] = new ${serTpe}[$elem, $tpe](); $name")
+      //log(s"implicit val $name: fm.serializer.Serializer[$tpe] = new ${serTpe}[$elem, $tpe](); $name")
       
+      // We have to use a SerializerProxy here because StringMapSerializer/TraversableOnceSerializer/JavaIterableSerializer
+      // all take implicit Serializer parameters that won't work if there is a nested type that is trying to reference
+      // the implicit val we are trying to create.
       q"""
-        implicit val $name: fm.serializer.Serializer[$tpe] = new ${serTpe}[$elem, $tpe]()
+        implicit val $proxyName: fm.serializer.SerializerProxy[$tpe] = new fm.serializer.SerializerProxy[$tpe]
+        val $name: fm.serializer.Serializer[$tpe] = new ${serTpe}[$elem, $tpe]()
+        $proxyName.self = $name
         $name
       """
     } else null
@@ -584,22 +590,33 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
   
   def makeNormalCollectionDeserializer(tpe: Type, elemTpe: Type): Tree = {
     val name: TermName = newTermName(ctx.fresh("colDeserializer"))
+    val proxyName: TermName = newTermName(ctx.fresh("colDeserializerProxy"))
     
     val isTrait: Boolean = tpe.typeSymbol.asClass.isTrait
        
-    if (hasImplicit(appliedType(typeOf[CanBuildFrom[_,_,_]], List(WildcardType, elemTpe, tpe)))) {
-      q"implicit val $name: fm.serializer.Deserializer[$tpe] = new fm.serializer.CanBuildFromDeserializer[$elemTpe, $tpe](); $name"
+    val tree: Tree = if (hasImplicit(appliedType(typeOf[CanBuildFrom[_,_,_]], List(WildcardType, elemTpe, tpe)))) {
+      q"new fm.serializer.CanBuildFromDeserializer[$elemTpe, $tpe]()"
     } else if (tpe <:< typeOf[Growable[_]] && hasNoArgsConstructor(tpe)) {
-      q"implicit val $name: fm.serializer.Deserializer[$tpe] = new fm.serializer.GrowableDeserializer[$elemTpe, $tpe](new $tpe); $name"
+      q"new fm.serializer.GrowableDeserializer[$elemTpe, $tpe](new $tpe)"
     } else if (tpe <:< typeOf[Vector[_]]) {
-      q"implicit val $name: fm.serializer.Deserializer[$tpe] = fm.serializer.CanBuildFromDeserializer.forVector[$elemTpe, $tpe](); $name"
+      q"fm.serializer.CanBuildFromDeserializer.forVector[$elemTpe, $tpe]()"
     } else if (tpe <:< typeOf[JavaCollection[_]]) {
       // TODO: make this more robust
       val newTpe: Tree = if (isTrait) q"new java.util.ArrayList[$elemTpe]()" else q"new $tpe" 
-      q"implicit val $name: fm.serializer.Deserializer[$tpe] = new fm.serializer.JavaCollectionDeserializer[$elemTpe, $tpe]($newTpe); $name"
+      q"new fm.serializer.JavaCollectionDeserializer[$elemTpe, $tpe]($newTpe)"
     } else {
       null
     }
+    
+    if (tree == null) return null
+    
+    // See notes in checkCollectionSerializer for why we use this pattern
+    q"""
+      implicit val $proxyName: fm.serializer.DeserializerProxy[$tpe] = new fm.serializer.DeserializerProxy[$tpe]()
+      val $name: fm.serializer.Deserializer[$tpe] = $tree
+      $proxyName.self = $name
+      $name
+    """
   }
   
   def makeStringMapCollectionDeserializer(tpe: Type, elemTpe: Type): Tree = {
@@ -608,15 +625,16 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     val List(_,valueTpe) = extractTypeParamAsSeenFrom(elemTpe, typeOf[(_,_)])
     
     val name: TermName = newTermName(ctx.fresh("colDeserializer"))
+    val proxyName: TermName = newTermName(ctx.fresh("colDeserializerProxy"))
     
     val isTrait: Boolean = tpe.typeSymbol.asClass.isTrait
        
-    if (hasImplicit(appliedType(typeOf[CanBuildFrom[_,_,_]], List(WildcardType, elemTpe, tpe)))) {
-      q"implicit val $name: fm.serializer.Deserializer[$tpe] = new fm.serializer.StringMapCanBuildFromDeserializer[$valueTpe, $tpe](); $name"
+    val tree: Tree = if (hasImplicit(appliedType(typeOf[CanBuildFrom[_,_,_]], List(WildcardType, elemTpe, tpe)))) {
+      q"new fm.serializer.StringMapCanBuildFromDeserializer[$valueTpe, $tpe]()"
     } else if (tpe <:< typeOf[Growable[_]] && hasNoArgsConstructor(tpe)) {
-      q"implicit val $name: fm.serializer.Deserializer[$tpe] = new fm.serializer.StringMapGrowableDeserializer[$valueTpe, $tpe](new $tpe); $name"
+      q"new fm.serializer.StringMapGrowableDeserializer[$valueTpe, $tpe](new $tpe)"
     } else if (tpe <:< typeOf[Vector[_]]) {
-      q"implicit val $name: fm.serializer.Deserializer[$tpe] = fm.serializer.StringMapCanBuildFromDeserializer.forVector[$valueTpe, $tpe](); $name"
+      q"fm.serializer.StringMapCanBuildFromDeserializer.forVector[$valueTpe, $tpe]()"
     } else if (tpe <:< typeOf[JavaCollection[_]]) {
       ???
       //val newTpe: Tree = if (isTrait) q"new java.util.ArrayList[$elemTpe]()" else q"new $tpe" 
@@ -624,6 +642,16 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     } else {
       null
     }
+    
+    if (tree == null) return null
+      
+    // See notes in checkCollectionSerializer for why we use this pattern
+    q"""
+      implicit val $proxyName: fm.serializer.DeserializerProxy[$tpe] = new fm.serializer.DeserializerProxy[$tpe]()
+      val $name: fm.serializer.Deserializer[$tpe] = $tree
+      $proxyName.self = $name
+      $name
+    """
   }
   
   def hasImplicit(implicitTpe: Type, withMacrosDisabled: Boolean = false): Boolean = getImplicit(implicitTpe, withMacrosDisabled).isDefined

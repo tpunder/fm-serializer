@@ -178,11 +178,17 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     longString: String = "abcdefghijklmnopqrstuvwxyz"*8190, // This should blow past the size of any output buffer to trigger slow string write paths
     multiByteLongString: String = "Hello \r\t\n \\ / \" \b\f oneByte: \u0024 twoByte: \u00A2 threeByte: \u20AC   World!"*1024,
     anothermultiByteLongString: String = "\u0024\u00A2\u20AC"*8190,
+    baz: Baz = Baz()
+    // Don't add more to this class (it already has 22 items) until we stop supporting Scala 2.10.x
+    // Don't add more to this class (it already has 22 items) until we stop supporting Scala 2.10.x
+    // Don't add more to this class (it already has 22 items) until we stop supporting Scala 2.10.x
+  )
+  
+  // Additional overflow since Foo & Bar have 22 items
+  case class Baz(
     // Should deserialize as a Vector
-    iterable: Iterable[String] = List("one","two","three")
-    // Don't add more to this class (it already has 22 items) until we stop supporting Scala 2.10.x
-    // Don't add more to this class (it already has 22 items) until we stop supporting Scala 2.10.x
-    // Don't add more to this class (it already has 22 items) until we stop supporting Scala 2.10.x
+    iterable: Iterable[String] = List("one","two","three"),
+    children: IndexedSeq[Baz] = Vector(Baz(children = Vector.empty), Baz(children = Vector.empty))
   )
   
   case class MostlyEmptyFoo(@Field(19) bar: Bar)
@@ -197,7 +203,7 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     foo2 should equal (foo)
     
     // Iterable doesn't have a CanBuildFrom so we default to using a Vector
-    require(foo2.bar.iterable.isInstanceOf[Vector[String]])
+    require(foo2.bar.baz.iterable.isInstanceOf[Vector[String]])
   }
   
   test("Foo - Skipping unknown fields") {
@@ -379,5 +385,21 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     
     obj2.fixedInt should equal (obj.fixedInt)
     obj2.fixedLong should equal (obj.fixedLong)
+  }
+  
+  //===============================================================================================
+  // Nested Collection Serializer (GitHub issue #5: https://github.com/frugalmechanic/fm-serializer/issues/5)
+  //===============================================================================================
+  
+  case class Node(name: String, children: IndexedSeq[Node] = Vector.empty)
+  
+  test("Nested Nodes") {
+    val n: Node = Node("one", children = Vector(Node("foo"), Node("bar")))
+    
+    val nodes: IndexedSeq[Node] = Vector(n, n, n)
+    val bytes: BYTES = serialize(nodes)
+    val nodes2: IndexedSeq[Node] = deserialize[IndexedSeq[Node]](bytes)
+    
+    nodes should equal (nodes2)
   }
 }
