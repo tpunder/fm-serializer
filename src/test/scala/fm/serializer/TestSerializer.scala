@@ -320,7 +320,7 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     foo2.getNumber should equal (foo.getNumber)
     foo2.isBool should equal (foo.isBool)
     foo2.getFooEnum should equal (foo.getFooEnum)
-    foo2.getChildren.asScala should equal(foo.getChildren.asScala)
+    foo2.getChildren.get(0).getName() should equal(foo.getChildren.get(0).getName())
     foo2.getList.asScala should equal (foo.getList.asScala)
     foo2.getListWithoutSetter.asScala should equal (foo.getListWithoutSetter.asScala)
     foo2.getIgnoredField1 should equal (null)
