@@ -251,12 +251,16 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
   //===============================================================================================
   // Nulls
   //===============================================================================================
+  def ignoreNullRetainTest: Boolean = false
+  
   test("Car with nulls should retain nulls") {
     val car: Car = Car(2005, null, null)
     val bytes: BYTES = serialize(car)
     val car2: Car = deserialize[Car](bytes)
     
-    car should equal (car2)
+    // In TestMinimalJSON we ignore this check since we don't output nulls
+    // and end up using the default values
+    if (!ignoreNullRetainTest) car should equal (car2)
   }
   
   test("Default values should be used for missing fields") {

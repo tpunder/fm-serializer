@@ -20,7 +20,7 @@ import fm.serializer.FMByteArrayOutputStream
 import fm.serializer.base64.Base64
 import java.nio.charset.StandardCharsets.UTF_8
 
-final class JSONOutput(outputNulls: Boolean = true, prettyFormat: Boolean = false, indent: String = "  ") extends Output {
+final class JSONOutput(outputNulls: Boolean = true, outputFalse: Boolean = true, prettyFormat: Boolean = false, indent: String = "  ") extends Output {
   import JSONOutput._
   
   def allowStringMap: Boolean = true
@@ -266,9 +266,11 @@ final class JSONOutput(outputNulls: Boolean = true, prettyFormat: Boolean = fals
   
   // Basic Types
   def writeFieldBool(number: Int, name: String, value: Boolean): Unit = {
-    doComma()
-    writeFieldName(name)
-    writeRawBool(value)
+    if (outputFalse || value) {
+      doComma()
+      writeFieldName(name)
+      writeRawBool(value)
+    }
   }
   
   def writeFieldFloat(number: Int, name: String, value: Float): Unit = {

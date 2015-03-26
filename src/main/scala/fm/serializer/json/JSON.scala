@@ -18,45 +18,47 @@ package fm.serializer.json
 import fm.serializer.{Deserializer, Serializer}
 import java.io.{ByteArrayInputStream, InputStreamReader, OutputStreamWriter, Reader, StringReader}
 import java.nio.charset.StandardCharsets.UTF_8
-import fm.serializer.fastutil.FastByteArrayOutputStream
 
 object JSON {
-  private[this] val jsonOutput: ThreadLocal[JSONOutput] = new ThreadLocal[JSONOutput]{
+  private[this] val defaultJSONOutput: ThreadLocal[JSONOutput] = new ThreadLocal[JSONOutput]{
     override protected def initialValue: JSONOutput = new JSONOutput()
   }
   
+  private[this] val minimalJSONOutput: ThreadLocal[JSONOutput] = new ThreadLocal[JSONOutput]{
+    override protected def initialValue: JSONOutput = new JSONOutput(outputNulls = false, outputFalse = false)
+  }
+  
+  private[this] val prettyJSONOutput: ThreadLocal[JSONOutput] = new ThreadLocal[JSONOutput]{
+    override protected def initialValue: JSONOutput = new JSONOutput(prettyFormat = true)
+  }
+  
   def toJSON[@specialized T](v: T)(implicit serializer: Serializer[T]): String = {
-    val bytes: Array[Byte] = toBytes[T](v)(serializer)
-    new String(bytes, UTF_8)
+    toJSON(v, defaultJSONOutput.get)
+  }
+  
+  def toMinimalJSON[@specialized T](v: T)(implicit serializer: Serializer[T]): String = {
+    toJSON(v, minimalJSONOutput.get)
   }
   
   def toPrettyJSON[@specialized T](v: T)(implicit serializer: Serializer[T]): String = {
-    val out: JSONOutput =  new JSONOutput(outputNulls = true, prettyFormat = true)
-    serializer.serializeRaw(out, v)
-    val bytes: Array[Byte] = out.toByteArray
-    new String(bytes, UTF_8)
+    toJSON(v, prettyJSONOutput.get)
   }
 
+  def toJSON[@specialized T](v: T, out: JSONOutput)(implicit serializer: Serializer[T]): String = {
+    val bytes: Array[Byte] = toBytes[T](v, out)(serializer)
+    new String(bytes, UTF_8)
+  }
+  
   def toBytes[@specialized T](v: T)(implicit serializer: Serializer[T]): Array[Byte] = {
-    val out: JSONOutput = jsonOutput.get
+    toBytes(v, defaultJSONOutput.get)
+  }
+  
+  def toBytes[@specialized T](v: T, out: JSONOutput)(implicit serializer: Serializer[T]): Array[Byte] = {
     serializer.serializeRaw(out, v)
     val ret: Array[Byte] = out.toByteArray
     out.reset()
     ret
   }
-  
-//  def toBytes[@specialized T](v: T)(implicit serializer: Serializer[T]): Array[Byte] = {
-//    val os = new FastByteArrayOutputStream
-//    val writer = new OutputStreamWriter(os, "UTF-8")
-//    toAppendable(writer, v)
-//    writer.flush()
-//    os.trim()
-//    os.array
-//  }
-  
-//  def toAppendable[@specialized T](out: Appendable, v: T)(implicit serializer: Serializer[T]): Unit = {
-//    serializer.serializeRaw(new JSONOutput(out), v)
-//  }
   
   def fromJSON[@specialized T](json: String)(implicit deserializer: Deserializer[T]): T = {
     deserializer.deserializeRaw(new JSONCharSequenceInput(json))
@@ -65,10 +67,6 @@ object JSON {
   def fromBytes[@specialized T](bytes: Array[Byte])(implicit deserializer: Deserializer[T]): T = {
     deserializer.deserializeRaw(new JSONByteArrayInput(bytes))
   } 
-  
-//  def fromBytes[@specialized T](bytes: Array[Byte])(implicit deserializer: Deserializer[T]): T = {
-//    fromReader(new InputStreamReader(new ByteArrayInputStream(bytes)))
-//  } 
   
   def fromReader[@specialized T](reader: Reader)(implicit deserializer: Deserializer[T]): T = {
     deserializer.deserializeRaw(new JSONReaderInput(reader))

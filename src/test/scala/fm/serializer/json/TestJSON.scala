@@ -18,9 +18,8 @@ package fm.serializer.json
 import org.scalatest.{FunSuite, Matchers}
 import fm.serializer.{Deserializer, Primitive, Serializer}
 
-final class TestJSON extends fm.serializer.TestSerializer[String]  {
+final class TestDefaultJSON extends TestJSON {
   def serialize[T](v: T)(implicit ser: Serializer[T]): String = JSON.toJSON[T](v)
-  def deserialize[T](json: String)(implicit deser: Deserializer[T]): T = JSON.fromJSON[T](json)
   
   test("String Map - Treated as object") {
     val map: Map[String,Int] = Map("foo" -> 123, "bar" -> 321)
@@ -39,4 +38,18 @@ final class TestJSON extends fm.serializer.TestSerializer[String]  {
     
     deserialize[Map[Int,String]](json) should equal (map)
   }
+}
+
+final class TestMinimalJSON extends TestJSON {
+  def serialize[T](v: T)(implicit ser: Serializer[T]): String = JSON.toMinimalJSON[T](v)
+  override def ignoreNullRetainTest: Boolean = true
+}
+
+final class TestPrettyJSON extends TestJSON {
+  def serialize[T](v: T)(implicit ser: Serializer[T]): String = JSON.toPrettyJSON[T](v)
+}
+
+abstract class TestJSON extends fm.serializer.TestSerializer[String]  {
+  def serialize[T](v: T)(implicit ser: Serializer[T]): String
+  final def deserialize[T](json: String)(implicit deser: Deserializer[T]): T = JSON.fromJSON[T](json)
 }
