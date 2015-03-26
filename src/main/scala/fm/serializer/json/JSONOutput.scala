@@ -20,7 +20,7 @@ import fm.serializer.FMByteArrayOutputStream
 import fm.serializer.base64.Base64
 import java.nio.charset.StandardCharsets.UTF_8
 
-final class JSONOutput(outputNulls: Boolean = true, outputFalse: Boolean = true, prettyFormat: Boolean = false, indent: String = "  ") extends Output {
+final class JSONOutput(outputNulls: Boolean = true, outputFalse: Boolean = true, outputZeros: Boolean = true, prettyFormat: Boolean = false, indent: String = "  ") extends Output {
   import JSONOutput._
   
   def allowStringMap: Boolean = true
@@ -274,15 +274,19 @@ final class JSONOutput(outputNulls: Boolean = true, outputFalse: Boolean = true,
   }
   
   def writeFieldFloat(number: Int, name: String, value: Float): Unit = {
-    doComma()
-    writeFieldName(name)
-    writeRawFloat(value)
+    if (outputZeros || value != 0f) {
+      doComma()
+      writeFieldName(name)
+      writeRawFloat(value)
+    }
   }
   
   def writeFieldDouble(number: Int, name: String, value: Double): Unit = {
-    doComma()
-    writeFieldName(name)
-    writeRawDouble(value)
+    if (outputZeros || value != 0d) {
+      doComma()
+      writeFieldName(name)
+      writeRawDouble(value)
+    }
   }
   
   def writeFieldString(number: Int, name: String, value: String): Unit = {
@@ -304,9 +308,11 @@ final class JSONOutput(outputNulls: Boolean = true, outputFalse: Boolean = true,
   
   // Ints  
   def writeFieldInt(number: Int, name: String, value: Int): Unit = {
-    doComma()
-    writeFieldName(name)
-    writeRawInt(value)
+    if (outputZeros || value != 0) {
+      doComma()
+      writeFieldName(name)
+      writeRawInt(value)
+    }
   }
   
   def writeFieldUnsignedInt(number: Int, name: String, value: Int): Unit = writeFieldInt(number, name, value)
@@ -315,9 +321,11 @@ final class JSONOutput(outputNulls: Boolean = true, outputFalse: Boolean = true,
   
   // Longs
   def writeFieldLong(number: Int, name: String, value: Long): Unit = {
-    doComma()
-    writeFieldName(name)
-    writeRawLong(value)
+    if (outputZeros || value != 0l) {
+      doComma()
+      writeFieldName(name)
+      writeRawLong(value)
+    }
   }
   
   def writeFieldUnsignedLong(number: Int, name: String, value: Long): Unit = writeFieldLong(number, name, value)

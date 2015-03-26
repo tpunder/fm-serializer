@@ -25,7 +25,7 @@ object JSON {
   }
   
   private[this] val minimalJSONOutput: ThreadLocal[JSONOutput] = new ThreadLocal[JSONOutput]{
-    override protected def initialValue: JSONOutput = new JSONOutput(outputNulls = false, outputFalse = false)
+    override protected def initialValue: JSONOutput = new JSONOutput(outputNulls = false, outputFalse = false, outputZeros = false)
   }
   
   private[this] val prettyJSONOutput: ThreadLocal[JSONOutput] = new ThreadLocal[JSONOutput]{
