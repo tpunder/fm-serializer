@@ -28,12 +28,14 @@ trait PrimitiveImplicits {
   implicit val byteArray: ByteArrayPrimitive  = new ByteArrayPrimitive()
   implicit val int:       IntPrimitive        = new IntPrimitive()
   implicit val long:      LongPrimitive       = new LongPrimitive()
+  implicit val char:      CharPrimitive       = new CharPrimitive()
   
-  import java.lang.{Boolean => JavaBoolean, Float => JavaFloat, Double => JavaDouble, Integer => JavaInt, Long => JavaLong}
+  import java.lang.{Boolean => JavaBoolean, Character => JavaChar, Float => JavaFloat, Double => JavaDouble, Integer => JavaInt, Long => JavaLong}
   
   implicit val javaBoolean: SimpleSerializer[JavaBoolean] = boolean.map[JavaBoolean](null) { _.booleanValue } { JavaBoolean.valueOf }
   implicit val javaFloat:   SimpleSerializer[JavaFloat]   = float.map[JavaFloat](null)     { _.floatValue   } { JavaFloat.valueOf }
   implicit val javaDouble:  SimpleSerializer[JavaDouble]  = double.map[JavaDouble](null)   { _.doubleValue  } { JavaDouble.valueOf }
   implicit val javaInt:     SimpleSerializer[JavaInt]     = int.map[JavaInt](null)         { _.intValue     } { JavaInt.valueOf }
   implicit val javaLong:    SimpleSerializer[JavaLong]    = long.map[JavaLong](null)       { _.longValue    } { JavaLong.valueOf }
+  implicit val javaChar:    SimpleSerializer[JavaChar]    = char.map[JavaChar](null)       { _.charValue    } { JavaChar.valueOf }
 }

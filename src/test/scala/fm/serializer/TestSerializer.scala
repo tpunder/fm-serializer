@@ -188,7 +188,8 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
   case class Baz(
     // Should deserialize as a Vector
     iterable: Iterable[String] = List("one","two","three"),
-    children: IndexedSeq[Baz] = Vector(Baz(children = Vector.empty), Baz(children = Vector.empty))
+    children: IndexedSeq[Baz] = Vector(Baz(children = Vector.empty), Baz(children = Vector.empty)),
+    char: Char = 'A'
   )
   
   case class MostlyEmptyFoo(@Field(19) bar: Bar)

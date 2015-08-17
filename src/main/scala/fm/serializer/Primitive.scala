@@ -85,6 +85,22 @@ final class StringPrimitive extends Primitive[String] {
   def deserializeNested(input: NestedInput): String = input.readNestedString()
 }
 
+// We treat chars as Strings
+final class CharPrimitive extends Primitive[Char] {
+  def serializeRaw(output: RawOutput, v: Char): Unit = output.writeRawString(v.toString)
+  def serializeNested(output: NestedOutput, v: Char): Unit = output.writeNestedString(v.toString)
+  def serializeField(output: FieldOutput, number: Int, name: String, v: Char): Unit = output.writeFieldString(number, name, v.toString)
+  
+  def defaultValue: Char = (0: Char)
+  def deserializeRaw(input: RawInput): Char = toChar(input.readRawString())
+  def deserializeNested(input: NestedInput): Char = toChar(input.readNestedString())
+  
+  private def toChar(s: String): Char = {
+    if (null == s || s.length() == 0) (0: Char)
+    else s.charAt(0)
+  }
+}
+
 final class ByteArrayPrimitive extends Primitive[Array[Byte]] {
   def serializeRaw(output: RawOutput, v: Array[Byte]): Unit = output.writeRawByteArray(v)
   def serializeNested(output: NestedOutput, v: Array[Byte]): Unit = output.writeNestedByteArray(v)
