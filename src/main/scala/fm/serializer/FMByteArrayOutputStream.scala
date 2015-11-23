@@ -85,7 +85,7 @@ final class FMByteArrayOutputStream(
    * If it's under this length then just write it to our buffers
    */
   SpliceThresholdSize: Int = FMByteArrayOutputStream.DefaultSpliceThresholdSize
-) extends OutputStream {
+) extends OutputStream with Appendable {
   
   require(MinUsefulBufferSize <= BufferSize, s"MinUsefulBufferSize ($MinUsefulBufferSize) should be less than or equal to BufferSize ($BufferSize)")
   require(CompactThresholdSize <= BufferSize, s"CompactThresholdSize ($CompactThresholdSize) should be less than or equal to BufferSize ($BufferSize)")
@@ -212,9 +212,22 @@ final class FMByteArrayOutputStream(
   }
   
   /** Appendable Implementation */
-  def append(ch: Char): Unit = {
+  def append(ch: Char): this.type = {
     ensureAvailable(sizeOfUTF8Char(ch))
-    appendCharNoBoundsCheck(ch)    
+    appendCharNoBoundsCheck(ch)
+    this
+  }
+  
+  /** Appendable Implementation */
+  def append(str: CharSequence): this.type = {
+    append(str, 0, str.length())
+    this
+  }
+  
+  /** Appendable Implementation */
+  def append(str: CharSequence, start: Int, end: Int): this.type = {
+    write(str.toString(), start, end - start)
+    this
   }
   
   def write(str: String): Unit = write(str, 0, str.length())
