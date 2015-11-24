@@ -6,9 +6,9 @@ version := "0.3.0-SNAPSHOT"
 
 description := "Scala Macro Based Serialization"
 
-scalaVersion := "2.11.5"
+scalaVersion := "2.11.7"
 
-crossScalaVersions := Seq("2.10.4", "2.11.5")
+crossScalaVersions := Seq("2.10.6", "2.11.7")
 
 // Needed for the JavaBean tests to work
 compileOrder := CompileOrder.JavaThenScala
@@ -21,15 +21,15 @@ libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-reflect" % _)
 // Enable the Macro Paradise Compiler Plugin for Scala 2.10
 libraryDependencies <++= (scalaVersion){ sv =>
   if (sv.startsWith("2.10")) Seq (
-    compilerPlugin("org.scalamacros" % "paradise" % "2.0.1" cross CrossVersion.full),
-    "org.scalamacros" %% "quasiquotes" % "2.0.1"
+    compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
+    "org.scalamacros" %% "quasiquotes" % "2.1.0"
   ) else Nil
 }
 
 // TODO: make these optional
 libraryDependencies ++= Seq(
-  "joda-time" % "joda-time" % "2.7",
-  "org.joda" % "joda-convert" % "1.7"
+  "joda-time" % "joda-time" % "2.9.1",
+  "org.joda" % "joda-convert" % "1.8" // Required by joda-time when using Scala
 )
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.4" % "test"
