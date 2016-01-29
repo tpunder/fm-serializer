@@ -17,7 +17,8 @@ package fm.serializer
 
 import java.io.File
 import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
-import java.util.Date
+import java.time.LocalDate
+import java.util.{Calendar, Date}
 import org.scalatest.{FunSuite, Matchers}
 import scala.collection.JavaConverters._
 
@@ -189,7 +190,9 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     // Should deserialize as a Vector
     iterable: Iterable[String] = List("one","two","three"),
     children: IndexedSeq[Baz] = Vector(Baz(children = Vector.empty), Baz(children = Vector.empty)),
-    char: Char = 'A'
+    char: Char = 'A',
+    calendar: Calendar = Calendar.getInstance,
+    localDate: LocalDate = LocalDate.now
   )
   
   case class MostlyEmptyFoo(@Field(19) bar: Bar)

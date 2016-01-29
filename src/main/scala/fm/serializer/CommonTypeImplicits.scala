@@ -17,7 +17,8 @@ package fm.serializer
 
 import java.io.File
 import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
-import java.util.{Date => JavaDate}
+import java.util.{Calendar, Date}
+import java.time.LocalDate
 
 /**
  * These are implicit serializers/deserializers for common types that do not require the use of a macro to generate.
@@ -26,36 +27,17 @@ import java.util.{Date => JavaDate}
  * since we can't call macros from here without creating a separate compilation package.
  */
 trait CommonTypeImplicits {
-//  implicit val javaBitInteger: SimpleSerializer[JavaBigInteger] = new MappedSimpleSerializer[Array[Byte], JavaBigInteger](Primitive.byteArray) {
-//    protected def defaultValue: JavaBigInteger = null 
-//    protected def serialize(obj: JavaBigInteger): Array[Byte] = obj.toByteArray
-//    protected def deserialize(value: Array[Byte]): JavaBigInteger = new JavaBigInteger(value)
-//  }
-  
+
   implicit val javaFile: MappedSimpleSerializer[String,File] = Primitive.string.map(_.toString, new File(_), null)
-  
   implicit val javaBigInteger: MappedSimpleSerializer[Array[Byte],JavaBigInteger] = Primitive.byteArray.map(_.toByteArray, new JavaBigInteger(_), null)
+  implicit val javaDate: MappedSimpleSerializer[Long,Date] = Primitive.long.map(_.getTime, new Date(_), null)
+  implicit val javaCalendar: MappedSimpleSerializer[Long,Calendar] = Primitive.long.map(_.getTime.getTime, toCalendar, null)
   
-  implicit val javaDate: MappedSimpleSerializer[Long,JavaDate] = Primitive.long.map(_.getTime, new JavaDate(_), null)
-  
-//  implicit val javaDate: MappedSimpleSerializer[Long,JavaDate] = new MappedSimpleSerializer[Long,JavaDate](Primitive.long, new Mapper[Long,JavaDate]{
-//    def defaultValue: JavaDate = null
-//    def serialize(obj: JavaDate): Long = obj.getTime
-//    def deserialize(value: Long): JavaDate = new JavaDate(value)
-//  })
-//  
-//  implicit object javaDate extends SimpleSerializer[JavaDate] {
-//    private[this] val orig: LongPrimitive = Primitive.long
-//    
-//    final def serializeRaw(output: RawOutput, v: JavaDate): Unit = if (null != v) orig.serializeRaw(output, v.getTime)
-//    final def serializeNested(output: NestedOutput, v: JavaDate): Unit = if (null != v) orig.serializeNested(output, v.getTime)
-//    final def serializeField(output: FieldOutput, number: Int, name: String, v: JavaDate): Unit = if (null != v) orig.serializeField(output, number, name, v.getTime)
-//    
-//    final def deserializeRaw(input: RawInput): JavaDate = new JavaDate(orig.deserializeRaw(input))
-//    final def deserializeNested(input: NestedInput): JavaDate = new JavaDate(orig.deserializeNested(input))
-//    
-//    final def defaultValue: JavaDate = null
-//  }
+  private def toCalendar(millis: Long): Calendar = {
+    val calendar: Calendar = Calendar.getInstance()
+    calendar.setTimeInMillis(millis)
+    calendar
+  }
   
   //
   // javax.xml stuff
@@ -76,6 +58,21 @@ trait CommonTypeImplicits {
   //
   // java.time
   //
-  
   implicit val javaLocalDate: MappedSimpleSerializer[String, java.time.LocalDate] = Primitive.string.map(_.toString, java.time.LocalDate.parse(_), null)
+  
+  // NOTE: CANNOT CURRENTLY USE THIS VERSION SINCE WE HAVE EXISTING CODE THAT USES THE STRING BASED VERSION
+//  implicit val javaLocalDate: MappedSimpleSerializer[Int,LocalDate] = Primitive.int.map(localDateToInt, intToLocalDate, null)
+//  
+//  // Converts to: yyyymmdd
+//  private def localDateToInt(d: LocalDate): Int = d.getYear * 10000 + d.getMonthValue * 100 + d.getDayOfMonth
+//  
+//  // Parses from: yyyymmdd
+//  private def intToLocalDate(n: Int): LocalDate = {
+//    val year: Int = n / 10000
+//    val month: Int = n / 100 % 100
+//    val dayOfMonth: Int = n % 100
+//    LocalDate.of(year, month, dayOfMonth)
+//  }
+  
+  
 }
