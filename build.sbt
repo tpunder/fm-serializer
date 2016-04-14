@@ -6,9 +6,9 @@ version := "0.4.0-SNAPSHOT"
 
 description := "Scala Macro Based Serialization"
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
 
-crossScalaVersions := Seq("2.10.6", "2.11.7")
+crossScalaVersions := Seq("2.10.6", "2.11.8")
 
 // Needed for the JavaBean tests to work
 compileOrder := CompileOrder.JavaThenScala
