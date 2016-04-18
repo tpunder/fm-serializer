@@ -38,6 +38,15 @@ final class TestDefaultJSON extends TestJSON {
     
     deserialize[Map[Int,String]](json) should equal (map)
   }
+  
+  case class Unquoted(name: String, int: Int, long: Long)
+  
+  test("Unquoted Field Names") {
+    deserialize[Unquoted]("""{name:null,int:123,long:123123123123123}""") should equal(Unquoted(null, 123, 123123123123123L))
+    deserialize[Unquoted]("""{name:nullnot,int:123,long:123123123123123}""") should equal(Unquoted("nullnot", 123, 123123123123123L))
+    deserialize[Unquoted]("""{name:foo,int:123,long:123123123123123}""") should equal(Unquoted("foo", 123, 123123123123123L))
+    deserialize[Unquoted]("""{name:foo,int:"123",long:"123123123123123"}""") should equal(Unquoted("foo", 123, 123123123123123L))
+  }
 }
 
 final class TestMinimalJSON extends TestJSON {

@@ -45,11 +45,25 @@ abstract class JSONInput extends Input {
     while (hasNext && Character.isWhitespace(peek)) next
   }
   
+  /** Read contiguous chars that make up non-string types (e.g. 123.456, false, true, null) that can be optionally quoted */
+  private def readOptionallyQuotedContiguousChars(): String = {
+    skipWhitespace()
+    
+    if (peek == '"') {
+      next // Eat the leading quote
+      val res: String = readContiguousChars()
+      expectNextChar('"') // We expect a trailing quote
+      res
+    } else {
+      readContiguousChars()
+    }
+  }
+  
   /** Read contiguous chars that make up non-string types (e.g. 123.456, false, true, null) */
   private def readContiguousChars(): String = {
     skipWhitespace()
     require(isValidStartOfContiguousChars(), s"Invalid Start of Contiguous Chars (e.g. for a number, boolean, or null) ${peek.toChar}")
-    val sb = new JavaStringBuilder
+    val sb: JavaStringBuilder = new JavaStringBuilder()
     while (!isEndOfContiguousChars()) sb.append(next)
     val res: String = sb.toString
     require(res.length > 0, "Expected a non-empty string")
@@ -71,6 +85,8 @@ abstract class JSONInput extends Input {
       case '}' => true
       case ']' => true
       case ',' => true
+      case ':' => true
+      case '"' => true
       case _   => Character.isWhitespace(peek)
     }
   }
@@ -204,17 +220,24 @@ abstract class JSONInput extends Input {
   //
   
   // Basic Types
-  def readRawBool(): Boolean  = readContiguousChars().toBoolean
-  def readRawFloat(): Float   = readContiguousChars().toFloat
-  def readRawDouble(): Double = readContiguousChars().toDouble
+  def readRawBool(): Boolean  = readOptionallyQuotedContiguousChars().toBoolean
+  def readRawFloat(): Float   = readOptionallyQuotedContiguousChars().toFloat
+  def readRawDouble(): Double = readOptionallyQuotedContiguousChars().toDouble
   
   def readRawString(): String = {
     skipWhitespace()
     
-    // If we don't start with a quote then it should be a null value
-    if (nextValueIsNull) return null
+    // If we don't start with a quote then it should be a null value (or an unquoted number/string)
+    if (peek != '"') {
+      val res: String = readContiguousChars() match {
+        case "null" => null
+        case s => s
+      }
+      
+      return res
+    }
     
-    expectNextChar('"')
+    next // Skip over the leading "
     
     // Empty string special case
     if (peek == '"') {
@@ -222,10 +245,10 @@ abstract class JSONInput extends Input {
       return ""
     }
     
-    val sb = new JavaStringBuilder
+    val sb: JavaStringBuilder = new JavaStringBuilder()
     
     var done = false
-    while(!done) {
+    while (!done) {
       val ch: Char = next
       
       if (ch == '"') {
@@ -263,13 +286,13 @@ abstract class JSONInput extends Input {
   }
   
   // Ints  
-  def readRawInt(): Int = readContiguousChars().toInt
+  def readRawInt(): Int = readOptionallyQuotedContiguousChars().toInt
   def readRawUnsignedInt(): Int = readRawInt()
   def readRawSignedInt(): Int = readRawInt()
   def readRawFixedInt(): Int = readRawInt()
   
   // Longs
-  def readRawLong(): Long = readContiguousChars().toLong
+  def readRawLong(): Long = readOptionallyQuotedContiguousChars().toLong
   def readRawUnsignedLong(): Long = readRawLong()
   def readRawSignedLong(): Long = readRawLong()
   def readRawFixedLong(): Long = readRawLong()
