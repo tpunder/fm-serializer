@@ -160,7 +160,7 @@ final class TestFMByteArrayOutputStreamSmallBuffers extends TestFMByteArrayOutpu
     makeGapsInSampleData(os)
     os.totalSize should equal (SampleDataAfterGaps.length)
 
-    println(os.debugInfo)
+    //println(os.debugInfo)
     
     SampleData.foreach{ os.write }
     makeGapsInSampleData(os, SampleDataAfterGaps.length)
