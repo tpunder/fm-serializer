@@ -61,14 +61,26 @@ object JSON {
   }
   
   def fromJSON[@specialized T](json: String)(implicit deserializer: Deserializer[T]): T = {
-    deserializer.deserializeRaw(new JSONCharSequenceInput(json))
+    fromJSON(json, JSONOptions.default)
+  }
+  
+  def fromJSON[@specialized T](json: String, options: JSONOptions)(implicit deserializer: Deserializer[T]): T = {
+    deserializer.deserializeRaw(new JSONCharSequenceInput(json, options))
   }
   
   def fromBytes[@specialized T](bytes: Array[Byte])(implicit deserializer: Deserializer[T]): T = {
-    deserializer.deserializeRaw(new JSONByteArrayInput(bytes))
+    fromBytes(bytes, JSONOptions.default)
+  }
+  
+  def fromBytes[@specialized T](bytes: Array[Byte], options: JSONOptions)(implicit deserializer: Deserializer[T]): T = {
+    deserializer.deserializeRaw(new JSONByteArrayInput(bytes, options))
   } 
   
   def fromReader[@specialized T](reader: Reader)(implicit deserializer: Deserializer[T]): T = {
-    deserializer.deserializeRaw(new JSONReaderInput(reader))
+    fromReader(reader, JSONOptions.default)
+  }
+  
+  def fromReader[@specialized T](reader: Reader, options: JSONOptions)(implicit deserializer: Deserializer[T]): T = {
+    deserializer.deserializeRaw(new JSONReaderInput(reader, options))
   }
 }

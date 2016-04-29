@@ -20,7 +20,7 @@ import java.lang.{StringBuilder => JavaStringBuilder}
 import fm.serializer.{CollectionInput, FieldInput, NestedInput, Input}
 import fm.serializer.base64.Base64
 
-final class JSONReaderInput(reader: Reader) extends JSONInput {
+final class JSONReaderInput(reader: Reader, options: JSONOptions) extends JSONInput(options) {
   /** Peek at the next character without consuming it */
   protected var peek: Int = reader.read()
   

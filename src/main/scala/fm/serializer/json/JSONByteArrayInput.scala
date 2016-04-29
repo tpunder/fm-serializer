@@ -15,7 +15,7 @@
  */
 package fm.serializer.json
 
-final class JSONByteArrayInput(bytes: Array[Byte]) extends JSONInput {
+final class JSONByteArrayInput(bytes: Array[Byte], options: JSONOptions) extends JSONInput(options) {
   private[this] var length: Int = bytes.length
   private[this] var idx: Int = 0
   

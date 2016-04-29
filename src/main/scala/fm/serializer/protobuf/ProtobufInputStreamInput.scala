@@ -23,7 +23,7 @@ import fm.serializer.{FieldInput, Input}
 // TODO
 // TODO: Check if this patch needs to be ported: https://code.google.com/p/protobuf/source/diff?spec=svn349&r=349&format=side&path=/trunk/java/src/main/java/com/google/protobuf/CodedInputStream.java
 // TODO
-final class ProtobufInputStreamInput(is: InputStream) extends ProtobufInput {
+final class ProtobufInputStreamInput(is: InputStream, options: ProtobufOptions) extends ProtobufInput {
   require(is.markSupported(), "mark() must be supported on the InputStream")
   
   /**
@@ -49,7 +49,10 @@ final class ProtobufInputStreamInput(is: InputStream) extends ProtobufInput {
     }
   }
   
-  final def readRawString(): String = new String(readRawByteArray(), UTF_8)
+  final def readRawString(): String = {
+    val res: String = new String(readRawByteArray(), UTF_8)
+    if (options.internStrings) res.intern() else res
+  }
   
   final def readRawByteArray(): Array[Byte] = {
     val bos: ByteArrayOutputStream = new ByteArrayOutputStream
@@ -68,7 +71,8 @@ final class ProtobufInputStreamInput(is: InputStream) extends ProtobufInput {
     val size: Int = readRawVarint32()
     if (-1 == size) null else if (0 == size) "" else {
       val bytes: Array[Byte] = readRawBytes(size)
-      new String(bytes, UTF_8)
+      val res: String = new String(bytes, UTF_8)
+      if (options.internStrings) res.intern() else res
     }
   }
  

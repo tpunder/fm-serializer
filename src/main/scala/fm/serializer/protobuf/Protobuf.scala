@@ -81,11 +81,19 @@ object Protobuf {
   }
   
   def fromBytes[@specialized T](bytes: Array[Byte])(implicit deserializer: Deserializer[T]): T = {
-    deserializer.deserializeRaw(new ProtobufByteArrayInput(bytes))
+    fromBytes(bytes, ProtobufOptions.default)
+  }
+  
+  def fromBytes[@specialized T](bytes: Array[Byte], options: ProtobufOptions)(implicit deserializer: Deserializer[T]): T = {
+    deserializer.deserializeRaw(new ProtobufByteArrayInput(bytes, options))
   }
   
   def fromInputStream[@specialized T](is: InputStream)(implicit deserializer: Deserializer[T]): T = {
-    deserializer.deserializeRaw(new ProtobufInputStreamInput(is))
+    fromInputStream(is, ProtobufOptions.default)
+  }
+  
+  def fromInputStream[@specialized T](is: InputStream, options: ProtobufOptions)(implicit deserializer: Deserializer[T]): T = {
+    deserializer.deserializeRaw(new ProtobufInputStreamInput(is, options))
   }
   
   def toBase64String[@specialized T](v: T)(implicit serializer: Serializer[T]): String = {
@@ -93,7 +101,11 @@ object Protobuf {
   }
   
   def fromBase64String[@specialized T](str: String)(implicit deserializer: Deserializer[T]): T = {
-    fromBytes[T](Base64.decode(str))
+    fromBase64String(str, ProtobufOptions.default)
+  }
+  
+  def fromBase64String[@specialized T](str: String, options: ProtobufOptions)(implicit deserializer: Deserializer[T]): T = {
+    fromBytes[T](Base64.decode(str), options)
   }
   
   def toBase64URLSafeString[@specialized T](v: T)(implicit serializer: Serializer[T]): String = {
@@ -101,6 +113,10 @@ object Protobuf {
   }
   
   def fromBase64URLSafeString[@specialized T](str: String)(implicit deserializer: Deserializer[T]): T = {
-    fromBytes[T](Base64.decode(str, Base64.URL_SAFE))
+    fromBase64URLSafeString(str, ProtobufOptions.default)
+  }
+  
+  def fromBase64URLSafeString[@specialized T](str: String, options: ProtobufOptions)(implicit deserializer: Deserializer[T]): T = {
+    fromBytes[T](Base64.decode(str, Base64.URL_SAFE), options)
   }
 }

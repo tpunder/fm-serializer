@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Frugal Mechanic (http://frugalmechanic.com)
+ * Copyright 2016 Frugal Mechanic (http://frugalmechanic.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,16 @@
  */
 package fm.serializer.json
 
-final class JSONCharSequenceInput(chars: CharSequence, options: JSONOptions) extends JSONInput(options) {
-  private[this] val length: Int = chars.length
-  private[this] var idx: Int = 0
+object JSONOptions {
+  val default: JSONOptions = JSONOptions()
+  val internStrings: JSONOptions = JSONOptions(internStrings = true)
+}
+
+/**
+ * @param internStrings Call String.intern() on any strings read
+ */
+final case class JSONOptions(
+  internStrings: Boolean = false
+) {
   
-  /** Peek at the next character without consuming it */
-  protected def peek: Int = if (idx < length) chars.charAt(idx) else -1
-  
-  /** Return peek and advance to the next character */
-  protected def next: Char = {
-    val ch: Char = chars.charAt(idx)
-    idx += 1
-    ch
-  }
 }

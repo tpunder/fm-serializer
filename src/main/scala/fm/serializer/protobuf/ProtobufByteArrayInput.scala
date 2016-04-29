@@ -23,7 +23,7 @@ import fm.serializer.{FieldInput, Input}
  * is much more JVM/JIT optimization friendly than reading from an
  * InputStream.
  */
-final class ProtobufByteArrayInput(buffer: Array[Byte]) extends ProtobufInput {
+final class ProtobufByteArrayInput(buffer: Array[Byte], options: ProtobufOptions) extends ProtobufInput {
   
   /**
    * offset in the array
@@ -45,7 +45,7 @@ final class ProtobufByteArrayInput(buffer: Array[Byte]) extends ProtobufInput {
   private def readRawString(size: Int): String = {
     val res: String = new String(buffer, offset, size, UTF_8)
     offset += size
-    res
+    if (options.internStrings) res.intern() else res
   }
     
   // Optimized to avoid the extra array copy

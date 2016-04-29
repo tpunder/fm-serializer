@@ -20,7 +20,7 @@ import java.lang.{StringBuilder => JavaStringBuilder}
 import fm.serializer.{CollectionInput, FieldInput, NestedInput, Input}
 import fm.serializer.base64.Base64
 
-abstract class JSONInput extends Input {
+abstract class JSONInput(options: JSONOptions) extends Input {
   def allowStringMap: Boolean = true
   
   private[this] var inObject: Boolean = false
@@ -234,7 +234,7 @@ abstract class JSONInput extends Input {
         case s => s
       }
       
-      return res
+      return if (options.internStrings) res.intern() else res
     }
     
     next // Skip over the leading "
@@ -276,7 +276,8 @@ abstract class JSONInput extends Input {
       }
     }
     
-    sb.toString
+    val res: String = sb.toString
+    if (options.internStrings) res.intern() else res
   }
   
   // Bytes
