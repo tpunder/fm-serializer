@@ -209,7 +209,8 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     tpe: Type = null,
     defaultValue: Tree = null
   ) {
-    def combine(other: FieldImpl): FieldImpl = try {      
+    def combine(other: FieldImpl): FieldImpl = try {
+      
       copy(
         number = combine(number, other.number),
         name = combine(name, other.name),
@@ -221,7 +222,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
         tpe = combine(tpe, other.tpe)
       )
     } catch {
-      case ex: Exception => ctx.abort(ctx.enclosingPosition, s"Could not Combine: ${ex.getMessage()} \nThis: $this\nOther: $other")
+      case ex: Exception => ctx.abort(ctx.enclosingPosition, s"Could not Combine: ${ex.getMessage()} \nThis: $this\nOther: $other\nStack Trace:\n  ${ex.getStackTrace.mkString("\n  ")}")
     }
     
     private def combine(a: Int, b: Int): Int = {
@@ -241,7 +242,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     private def combine(a: Type, b: Type): Type = combine(Option(a), Option(b))
     
     private def combine[T <: AnyRef](a: Option[T], b: Option[T]): T = {
-      require(a == a || a.isDefined ^ b.isDefined, s"Values are different: $a != $b")
+      require(a == b || a.isDefined ^ b.isDefined, s"Values are different: $a != $b")
       (a orElse b).getOrElse{ null.asInstanceOf[T] }
     }
   }
@@ -361,7 +362,11 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
       // If this param is a Val then we can also use it as a getter
       val getter: String = if (param.isTerm && param.asTerm.isVal) name else null
       
-      val spec: FieldImpl = makeFieldImpl(ann.scalaArgs, name)
+      // If the @Field annotation doesn't have a number give it a default
+      val defaultNumber: Int = idx + 1
+      
+      val spec: FieldImpl = makeFieldImpl(ann.scalaArgs, name, defaultNumber)
+      
       val additionalInfo: FieldImpl = FieldImpl(constructorIdx = idx, getter = getter, tpe = resolveType(tpe, param.typeSignature))
       
       spec combine additionalInfo
@@ -369,8 +374,8 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     
     val all: Vector[FieldImpl] = fields ++ constructorParams
     
-    // Collapsed by number
-    val collapsed: Vector[FieldImpl] = all.groupBy{ _.number }.values.map{ _.reduceLeft{ (a,b) => a combine b } }.toVector
+    // Combine by number and then by name
+    val collapsed: Vector[FieldImpl] = combineFieldImpl(all)
     
     // Sorted by number
     val sorted: Vector[FieldImpl] = collapsed.sortBy{ _.number }
@@ -378,11 +383,23 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     sorted
   }
   
+  // Combine compatible FieldImpl records by number and name
+  private def combineFieldImpl(all: Vector[FieldImpl]): Vector[FieldImpl] = {
+    combineFieldImplUsing(combineFieldImplUsing(all, _.number, (num: Int) => num == -1), _.name, (name: String) => name == null)
+  }
+  
+  private def combineFieldImplUsing[T](all: Vector[FieldImpl], groupBy: FieldImpl => T, ignore: T => Boolean): Vector[FieldImpl] = {
+    val (toCombine, ignored): (Vector[FieldImpl], Vector[FieldImpl]) = all.partition{ f: FieldImpl => !ignore(groupBy(f)) }
+    
+    val combined: Vector[FieldImpl] = toCombine.groupBy{ groupBy }.values.map{ _.reduceLeft{ (a,b) => a combine b } }.toVector
+    combined ++ ignored
+  }
+  
   /**
    * Given the arguments for a Field (either from an expression creating a new instance of a Field or from an annotation)
    * create a FieldImpl
    */
-  def makeFieldImpl(args: Seq[Tree], defaultName: String = null): FieldImpl = {
+  def makeFieldImpl(args: Seq[Tree], defaultName: String = null, defaultNumber: Int = -1): FieldImpl = {
     args match {
       // Full Constructor:
       case Seq(int(number), string(name), string(getter), string(setter), int(constructorIdx), ser, deser) => FieldImpl(number, name, getter, setter, constructorIdx, ser, deser)
@@ -392,6 +409,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
       case Seq(int(number), string(name), string(getter), string(setter)) => FieldImpl(number, name, getter, setter, -1)
       case Seq(int(number), string(name)) => FieldImpl(number, name, null, null, -1)
       case Seq(int(number)) => FieldImpl(number, defaultName, null, null, -1)
+      case Seq(string(name)) => FieldImpl(defaultNumber, name, null, null, -1)
       
       // With Serializer Arg:
       // NOTE: The Tree matches for the serializer must come last since they will act as wildcard matches and conflict with some of the above patterns.
@@ -399,7 +417,11 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
       case Seq(int(number), string(name), string(getter), string(setter), ser) => FieldImpl(number, name, getter, setter, -1, ser, ser)
       case Seq(int(number), string(name), ser) => FieldImpl(number, name, null, null, -1, ser, ser)
       case Seq(int(number), ser) => FieldImpl(number, defaultName, null, null, -1, ser, ser)
-      case Seq(ser) => FieldImpl(-1, defaultName, null, null, -1, ser, ser)
+      case Seq(ser) => FieldImpl(defaultNumber, defaultName, null, null, -1, ser, ser)
+      case Seq(string(name), ser) => FieldImpl(defaultNumber, name, null, null, -1, ser, ser)
+      
+      // Empty
+      case Seq() => FieldImpl(defaultNumber, defaultName)
     }
   }
   

@@ -28,6 +28,7 @@ final class Field(number: Int, name: String, getter: String, setter: String, con
   def this(number: Int, name: String, getter: String, setter: String) = this(number, name, getter, setter, -1, null, null)  
   def this(number: Int, name: String) = this(number, name, null, null, -1, null, null)
   def this(number: Int) = this(number, null, null, null, -1, null, null)
+  def this(name: String) = this(-1, name, null, null, -1, null, null)
   
   // With Serializer Arg:
   def this(number: Int, name: String, getter: String, constructorIdx: Int, serializer: SimpleSerializer[_]) = this(number, name, getter, null, constructorIdx, serializer, serializer) 
@@ -35,6 +36,10 @@ final class Field(number: Int, name: String, getter: String, setter: String, con
   def this(number: Int, name: String, serializer: SimpleSerializer[_]) = this(number, name, null, null, -1, serializer, serializer)
   def this(number: Int, serializer: SimpleSerializer[_]) = this(number, null, null, null, -1, serializer, serializer)
   def this(serializer: SimpleSerializer[_]) = this(-1, null, null, null, -1, serializer, serializer)
+  def this(name: String, serializer: SimpleSerializer[_]) = this(-1, name, null, null, -1, serializer, serializer)
+  
+  // Empty
+  def this() = this(-1, null, null, null, -1, null, null)
   
   throw new AssertionError("This class shouldn't be instantiated anywhere")
 }

@@ -16,7 +16,7 @@
 package fm.serializer.json
 
 import org.scalatest.{FunSuite, Matchers}
-import fm.serializer.{Deserializer, Primitive, Serializer}
+import fm.serializer.{Deserializer, Field, Primitive, Serializer}
 
 final class TestDefaultJSON extends TestJSON {
   def serialize[T](v: T)(implicit ser: Serializer[T]): String = JSON.toJSON[T](v)
@@ -46,6 +46,16 @@ final class TestDefaultJSON extends TestJSON {
     deserialize[Unquoted]("""{name:nullnot,int:123,long:123123123123123}""") should equal(Unquoted("nullnot", 123, 123123123123123L))
     deserialize[Unquoted]("""{name:foo,int:123,long:123123123123123}""") should equal(Unquoted("foo", 123, 123123123123123L))
     deserialize[Unquoted]("""{name:foo,int:"123",long:"123123123123123"}""") should equal(Unquoted("foo", 123, 123123123123123L))
+  }
+  
+  case class AlternateName(@Field("type") tpe: String, @Field foo: Int)
+  
+  test("Alternate Field Name") {
+    val instance: AlternateName = AlternateName("the_type_field", 123)
+    val json: String = """{"type":"the_type_field","foo":123}"""
+    
+    serialize(instance) should equal (json)
+    deserialize[AlternateName](json) should equal (instance)
   }
 }
 
