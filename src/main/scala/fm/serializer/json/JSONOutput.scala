@@ -351,9 +351,11 @@ final class JSONOutput(outputNulls: Boolean = true, outputFalse: Boolean = true,
   }
   
   def writeFieldNull(number: Int, name: String): Unit = {
-    doComma()
-    writeFieldName(name)
-    writeNull()
+    if (outputNulls) {
+      doComma()
+      writeFieldName(name)
+      writeNull()
+    }
   }
   
   private def writeFieldName(name: String): Unit = {

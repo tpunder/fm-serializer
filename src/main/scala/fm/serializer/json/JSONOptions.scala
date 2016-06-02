@@ -25,6 +25,7 @@ object JSONOptions {
  */
 final case class JSONOptions(
   internStrings: Boolean = false
+  // TODO: Add the JSONOutput options into here and maybe split between serializer/deserialier options
 ) {
   
 }
