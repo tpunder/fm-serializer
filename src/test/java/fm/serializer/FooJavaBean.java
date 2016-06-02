@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.xml.bind.annotation.XmlTransient;
 
-public class FooJavaBean {
+public class FooJavaBean implements FooInterface {
   protected String name;
   protected int number;
   protected Boolean bool;
@@ -13,7 +13,8 @@ public class FooJavaBean {
   protected List<FooJavaBean> children;
   protected List<String> list;
   protected List<String> listWithoutSetter;
-  
+  protected BarImplementation bar;
+    
   protected String ignoredField1;
   @XmlTransient protected String ignoredField2;
 //  @XmlTransient public String ignoredField3;
@@ -73,7 +74,15 @@ public class FooJavaBean {
     }
     return this.listWithoutSetter;
   }
-
+  
+  public void setBar(BarImplementation b) {
+    bar = b;
+  }
+  
+  public BarImplementation getBar() {
+    return bar;
+  }
+  
   @Transient
   public String getIgnoredField1() {
     return ignoredField1;
