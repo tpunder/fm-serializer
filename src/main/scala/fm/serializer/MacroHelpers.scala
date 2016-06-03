@@ -1318,7 +1318,9 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     log(s"getFieldsForType($tpe)  => tpe.members.sorted: ${tpe.members.sorted}")
     
     // Not sure if this is totally correct.  I don't really see a way to filter the variable/value symbols from a tpe.declarations
-    tpe.members.sorted.filter{ d => d.isTerm && !d.isMethod }.map{ _.asTerm }.toVector
+    val res: Vector[TermSymbol] = tpe.members.sorted.filter{ d => d.isTerm && !d.isMethod }.map{ _.asTerm }.toVector
+    
+    dedupeInheritedTermSymbols(res)
   }
   
   def getPublicMethodForType(tpe: Type): Vector[MethodSymbol] = getMethodsForType(tpe).filter{ _.isPublic }
@@ -1336,18 +1338,53 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
   }
   
   def javaBeanGetters(tpe: Type): Vector[MethodSymbol] = {
-    getPublicMethodForType(tpe).filter{ isNoArgsMethod }.filter{ m: MethodSymbol =>
+    val all: Vector[MethodSymbol] = getPublicMethodForType(tpe).filter{ isNoArgsMethod }.filter{ m: MethodSymbol =>
       val name: String = m.name.decoded
       val isGetter: Boolean = name.startsWith("get") || ((m.returnType =:= typeOf[Boolean]  || m.returnType =:= typeOf[java.lang.Boolean]) && name.startsWith("is"))
       
       isGetter && name != "getClass" && name != "isInstanceOf"
     }
+    
+    dedupeInheritedMethodSymbols(all)
   }
   
   def javaBeanSetters(tpe: Type): Vector[MethodSymbol] = {
-    getPublicMethodForType(tpe).filter{ isSingleArgMethod }.filter{ m: MethodSymbol =>
+    val all: Vector[MethodSymbol] = getPublicMethodForType(tpe).filter{ isSingleArgMethod }.filter{ m: MethodSymbol =>
       val name: String = m.name.decoded
       name.startsWith("set")
     }
+    
+    // Since this dedupes based on the return type I don't think is actually what we want.
+    // We will probably need to de-dupe based on the type of the single argument.  Since
+    // all tests currently pass I'll punt this isuses until it actually becomes a problem.
+    //dedupeInheritedMethodSymbols(all)
+    
+    all
   }
+  
+  private def dedupeInheritedTypesUsing[T <: TermSymbol](symbols: Vector[T])(getType: T => Type): Vector[T] = {
+    
+    // zipWithIndex to retain the ordering
+    val grouped: Vector[Seq[(T,Int)]] = symbols.zipWithIndex.groupBy{ case (sym, idx) => sym.name.decoded }.values.toVector
+    
+    val res = grouped.map{ group: Seq[(T,Int)] =>
+      // We want the most specific return type in each group.  This handles
+      // the case of inheriting from an interface with a more specific return
+      // type.
+      group.sortWith{ case (a,b) => getType(a._1) <:< getType(b._1) }.head
+    }.sortBy{ case (symbol, idx) =>
+      // re-sort by the original index
+      idx
+    }.map{ case (symbol, idx) =>
+      symbol
+    }
+    
+    res
+  }
+  
+  // Note: existing code used the TermSymbol.typeSignature so I'm sticking with that here
+  private def dedupeInheritedTermSymbols(symbols: Vector[TermSymbol]): Vector[TermSymbol] = dedupeInheritedTypesUsing(symbols){ _.typeSignature }
+
+  // Note: existing code used the MethodSymbol.returnType so I'm sticking with that here.
+  private def dedupeInheritedMethodSymbols(symbols: Vector[MethodSymbol]): Vector[MethodSymbol] = dedupeInheritedTypesUsing(symbols){ _.returnType }
 }
