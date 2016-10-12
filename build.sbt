@@ -32,4 +32,4 @@ libraryDependencies ++= Seq(
   "org.joda" % "joda-convert" % "1.8" // Required by joda-time when using Scala
 )
 
-libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.4" % "test"
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.0" % "test"
