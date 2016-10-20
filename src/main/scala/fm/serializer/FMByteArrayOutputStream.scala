@@ -53,7 +53,7 @@ object FMByteArrayOutputStream {
     @elidable(elidable.ASSERTION)
     private def uniqueCheck(buf: Array[Byte]): Unit = {
       var i: Int = 0
-      while(i < count) {
+      while (i < count) {
         assert(buf ne pool(i), s"buf $buf already exists in pool at idx $i!!!")
         i += 1
       }
@@ -61,29 +61,26 @@ object FMByteArrayOutputStream {
   }
 }
 
+/**
+ * A ByteArrayOutputStream implementation optimized for writing binary serialized
+ * data (e.g. Protocol Buffers).
+ * 
+ * Tries to avoid excessive memory allocations and array resizing by using an Array
+ * of Byte Arrays to represent the data.  Supports directly appending Byte Arrays
+ * (zero-copy), writing length prefixed data, optimized writing of ASCII and UTF-8
+ * strings without going through a java.io.Writer.
+ * 
+ * @param InitialArrayCapacity The initial capacity of the internal arrays
+ * @param BufferSize The size of each buffer
+ * @param MinUsefulBufferSize If we are splicing data keep using the existing buffer if there is at least this much space in it
+ * @param CompactThresholdSize If writing length prefixed data we have a gap then compact the array if the written data is less than this amount
+ * @param SpliceThresholdSize If writing a Byte Array that is over this length then splice it in.  If it's under this length then just write it to our buffers
+ */
 final class FMByteArrayOutputStream(
-  /** The initial capacity of the internal arrays */
   InitialArrayCapacity: Int = FMByteArrayOutputStream.DefaultInitialArrayCapacity,
-  
-  /** The size of each buffer */
   BufferSize: Int = FMByteArrayOutputStream.DefaultBufferSize,
-  
-  /**
-   * If we are splicing data keep using the existing buffer 
-   * if there is at least this much space in it
-   */
   MinUsefulBufferSize: Int = FMByteArrayOutputStream.DefaultMinUsefulBufferSize,
-  
-  /**
-   * If writing length prefixed data we have a gap then compact the 
-   * array if the written data is less than this amount
-   */
   CompactThresholdSize: Int = FMByteArrayOutputStream.DefaultCompactThresholdSize,
-  
-  /**
-   * If writing a Byte Array that is over this length then splice it in.
-   * If it's under this length then just write it to our buffers
-   */
   SpliceThresholdSize: Int = FMByteArrayOutputStream.DefaultSpliceThresholdSize
 ) extends OutputStream with Appendable {
   
@@ -111,19 +108,16 @@ final class FMByteArrayOutputStream(
   
   /** Public accessor for tests */
   @inline final def bufferCount: Int = _bufferCount
-  //private def bufferCount_=(v: Int): Unit = _bufferCount = v
   
   /** A reference to the current active array that should be written into (e.g. this is the tail) */
   private[this] var _array: Array[Byte] = null
   
   @inline final def array: Array[Byte] = _array
-  //private def array_=(v: Array[Byte]): Unit = _array = v
   
   /** The starting idx of the current buffer */
   private[this] var _start: Int = 0
   
   @inline final def start: Int = _start
-  //private def start_=(v: Int): Unit = _start = v
   
   /** The offset that in the array that should be written to */
   private[this] var _offset: Int = 0
@@ -135,7 +129,7 @@ final class FMByteArrayOutputStream(
    * The max offset we can write into.
    *
    * Note: this is really the start+length but should be easier to code this way.
-   *       e.g. we can just say while(offset < length) { ...; length += 1 }
+   *       e.g. we can just say while (offset < length) { ...; length += 1 }
    */
   private[this] var _length: Int = 0
   
@@ -178,7 +172,7 @@ final class FMByteArrayOutputStream(
       
       if (len < available) {
         var arrOff: Int = _offset
-        while(i < end) {
+        while (i < end) {
           _array(arrOff) = bytes(i)
           arrOff += 1
           i += 1
@@ -189,7 +183,7 @@ final class FMByteArrayOutputStream(
           ensureAvailable(1)
           var arrOff: Int = _offset
           val len: Int = _length
-          while(i < end && arrOff < len) {
+          while (i < end && arrOff < len) {
             _array(arrOff) = bytes(i)
             arrOff += 1
             i += 1
@@ -249,7 +243,7 @@ final class FMByteArrayOutputStream(
       var i: Int = _start
       var arrOff: Int = _offset
       val arr: Array[Byte] = _array
-      while(i < len) {
+      while (i < len) {
         arr(arrOff) = str.charAt(i).toByte
         arrOff += 1
         i += 1
@@ -328,7 +322,7 @@ final class FMByteArrayOutputStream(
     val end: Int = start + len
     
     // Fast path for ASCII chars
-    while(i < end && ch <= 0x7F) {
+    while (i < end && ch <= 0x7F) {
       arr(off) = ch.toByte
       off += 1
       i += 1
@@ -336,7 +330,7 @@ final class FMByteArrayOutputStream(
     }
     
     // If the fast path terminated check for any remaining chars (which could be a mix of ASCII and non-ASCII)
-    while(i < end) {
+    while (i < end) {
       off += appendCharNoBoundsCheck(str.charAt(i), arr, off)
       i += 1
     }
@@ -360,7 +354,7 @@ final class FMByteArrayOutputStream(
       var arrLen: Int = _length
       var arr: Array[Byte] = _array
       
-      while(i < end && arrOff < arrLen && ch <= 0x7F) {
+      while (i < end && arrOff < arrLen && ch <= 0x7F) {
         arr(arrOff) = ch.toByte
         arrOff += 1
         i += 1
@@ -377,7 +371,7 @@ final class FMByteArrayOutputStream(
         arrLen = _length
         arr = _array
         val innerStartingOffset: Int = arrOff        
-        while(i < end && arrOff < arrLen - (MAX_UTF8_CHAR_BYTES - 1)) {
+        while (i < end && arrOff < arrLen - (MAX_UTF8_CHAR_BYTES - 1)) {
           arrOff += appendCharNoBoundsCheck(str.charAt(i), arr, arrOff)
           i += 1
         }
@@ -441,43 +435,7 @@ final class FMByteArrayOutputStream(
     _length = 0
     pooled = false
   }
-  
-  /** Count the number of bytes written by the function f */
-//  @inline def countBytes(f: => Unit): Int = {
-//    val startingCount: Int = bufferCount
-//    val startingOffset: Int = offset
-//    
-//    f
-//    
-//    if (startingCount == bufferCount) {
-//      // We are still writing to the same buffer
-//      offset - startingOffset
-//    } else {
-//      // The current buffer is now different so we need
-//      // to count up any saved buffers plus the current one
-//      var len: Int = 0
-//      
-//      // Bytes written into the original buffer we were writing into
-//      len += starts(startingCount) + lengths(startingCount) - startingOffset
-//      
-//      //assert(len >= 0, s"Invalid length: $len  starts(startingCount): ${starts(startingCount)}  lengths(startingCount): ${lengths(startingCount)}  startingOffset: $startingOffset")
-//      
-//      // Bytes written in other saved buffers
-//      var idx: Int = startingCount + 1
-//      while (idx < bufferCount) {
-//        len += lengths(idx)
-//        idx += 1
-//      }
-//      
-//      // Bytes written in the current buffer
-//      if (null != array) len += offset - start
-//      
-//      //if (debug) debug("Count Bytes: "+len)
-//      
-//      len
-//    }
-//  }
-  
+
   @inline def countBytes(f: => Unit): Int = {
     val startingCount: Int = totalSize
     f
@@ -496,7 +454,7 @@ final class FMByteArrayOutputStream(
     debug(s"skipBytes($globalIdx, $len)")
     
     assert(globalIdx >= 0 && globalIdx <= totalSize && len >= 0, s"Invalid Params:  skipBytes($globalIdx, $len)")
-    check
+    check()
     
     if (len == 0) return
     
@@ -534,7 +492,7 @@ final class FMByteArrayOutputStream(
     if (dataSize <= CompactThresholdSize) {
       shiftArrayNegative(array, globalIdx + len, dataSize, -len)
       _offset -= len
-      check
+      check()
       return
     }
     
@@ -542,7 +500,7 @@ final class FMByteArrayOutputStream(
     _start = globalIdx + len
     pooled = false
     
-    check
+    check()
   }
   
   /**
@@ -559,12 +517,12 @@ final class FMByteArrayOutputStream(
     if (dataSize <= CompactThresholdSize) {
       shiftArrayNegative(array, offset - dataSize, dataSize, -len)
       _offset -= len
-      check
+      check()
     } else {
       saveBuffer(array, start, offset - start - dataSize - len, pooled)
       pooled = false
       _start = _offset - dataSize 
-      check
+      check()
     }
   }
   
@@ -593,12 +551,12 @@ final class FMByteArrayOutputStream(
       shiftArrayNegative(buffer, startIdx + len, dataSize, -len)
       lengths(bufferIdx) = bufferLength - len
       assert(lengths(bufferIdx) >= 0, s"Invalid Length: ${lengths(bufferIdx)}   endIdx: $endIdx  startIdx: $startIdx  globalIdx: $globalIdx  len: $len")
-      check
+      check()
     } else {
       spliceBuffer(bufferIdx + 1, buffer, startIdx + len, dataSize)
       lengths(bufferIdx) = bufferLength - dataSize - len
       assert(lengths(bufferIdx) >= 0, s"Invalid Length: ${lengths(bufferIdx)}   endIdx: $endIdx  startIdx: $startIdx  globalIdx: $globalIdx  len: $len")
-      check
+      check()
     }
   }
   
@@ -612,7 +570,7 @@ final class FMByteArrayOutputStream(
     var size: Int = 0
     var done: Boolean = false
     
-    while(!done) {
+    while (!done) {
       size += lengths(i)
       if (globalIdx < size) done = true else i += 1
     }
@@ -692,166 +650,6 @@ final class FMByteArrayOutputStream(
     }
   }
   
-  @inline def lengthPrefixedOLD(maxPrefixSize: Int)(writeData: => Unit)(writePrefix: Int => Unit): Unit = {
-//    if (debug) {
-//      debug(s"lengthPrefixed($maxPrefixSize) - START")
-//      debug(debugInfo)
-//    }
-    
-    ensureAvailable(maxPrefixSize)
-    
-    // Save the starting count and offset
-    val startingCount: Int = _bufferCount
-    val startingOffset: Int = _offset
-    val startingStart: Int = _start
-    val startingLength: Int = _length
-    val startingPooled: Boolean = pooled
-    
-    // Increment past
-    _offset += maxPrefixSize
-    
-    // Perform data writes
-    val dataSize: Int = countBytes(writeData)
-    
-//    if (debug) {
-//      debug(s"lengthPrefixed($maxPrefixSize) - AFTER DATA WRITE")
-//      debug(debugInfo)
-//    }
-    
-    // SHORTCUT
-    // If we didn't write anything then we just need to reset the offset, write the prefix, and return
-    if (dataSize == 0) {
-      _offset = startingOffset
-      writePrefix(dataSize)
-      return
-    }
-    
-    // Reset so we can perform prefix write
-    val savedArray: Array[Byte] = _array
-    val savedOffset: Int = _offset
-    val savedStart: Int = _start
-    val savedLength: Int = _length
-    val savedPooled: Boolean = pooled
-    
-    if (startingCount != bufferCount) {
-      _array = buffers(startingCount)
-    }
-    
-    _offset = startingOffset
-    _start = startingStart
-    _length = startingLength
-    
-    // Do prefix write
-    writePrefix(dataSize)
-    
-//    if (debug) {
-//      debug(s"lengthPrefixed($maxPrefixSize) - AFTER PREFIX WRITE")
-//      debug(debugInfo)
-//    }
-    
-    val prefixSize: Int = offset - startingOffset
-    
-    assert(prefixSize <= maxPrefixSize, s"Expected prefixSize ($prefixSize) to be less than maxPrefixSize ($maxPrefixSize)")
-    
-    // We only have to do something if the prefix bytes written is less than the maxPrefixSize size
-    if (prefixSize == maxPrefixSize) {
-      // Restore to the end of the written data and we should be good.  It doesn't matter
-      // if array == savedArray in this case since there are no gaps in the written data
-      _array = savedArray
-      _offset = savedOffset
-      _start = savedStart
-      _length = savedLength
-      pooled = savedPooled
-    } else {
-      
-      if (startingCount == _bufferCount) {
-        // We are still working with the original buffer
-        if (dataSize <= CompactThresholdSize) {
-          // The data size is small enough that we will just shift everything to fill in the gap in data
-
-//          val shift: Int = maxPrefixSize - prefixSize
-//          var i: Int = startingOffset + maxPrefixSize
-//          val end: Int = i + dataSize
-//
-//          //
-//          // This appears to be more performant than System.arraycopy since the src/dst arrays are the same
-//          //
-//          while (i < end) {
-//            array(i - shift) = array(i)
-//            i += 1
-//          }
-          
-          val shiftStart: Int = startingOffset + maxPrefixSize
-          //val shiftEnd: Int = shiftStart + dataSize - 1
-          val shift: Int = maxPrefixSize - prefixSize
-          
-          shiftArrayNegative(array, shiftStart, dataSize, -shift)
-          
-          offset = startingOffset + prefixSize + dataSize
-        } else {
-          // We don't want to shift everything so we'll just save the current buffer and increment past the gap
-          saveCurrentBuffer()
-          _start = startingOffset + maxPrefixSize
-          _offset = savedOffset
-        }
-      } else {
-        // We are working with a new buffer
-        
-        // This is the size of the data written into the original buffer (which should be < dataSize)
-        val bufferDataSize: Int = starts(startingCount) + lengths(startingCount) - (startingOffset + maxPrefixSize)
-        
-        // Check if we should compact the data or splice it
-        if (bufferDataSize <= CompactThresholdSize) {
-          // We'll just shift to fill in the gap
-          
-//          val shift: Int = maxPrefixSize - prefixSize
-//          var i: Int = startingOffset + maxPrefixSize
-//          val end: Int = i + bufferDataSize
-//          
-//          //
-//          // This appears to be more performant than System.arraycopy since the src/dst arrays are the same
-//          //
-//          while (i < end) {
-//            array(i - shift) = array(i)
-//            i += 1
-//          }
-          
-          val shiftStart: Int = startingOffset + maxPrefixSize
-          //val shiftEnd: Int = shiftStart + bufferDataSize - 1
-          val shift: Int = maxPrefixSize - prefixSize
-          
-          shiftArrayNegative(array, shiftStart, bufferDataSize, -shift)
-          
-          lengths(startingCount) = lengths(startingCount) - shift
-        } else {
-          // We'll split the array instead of shifting
-          
-          // Splice in another copy of the buffer skipping over the un-used bytes
-          val spliceStart: Int = startingOffset + maxPrefixSize
-          val spliceLen: Int = bufferDataSize
-          spliceBuffer(startingCount + 1, array, spliceStart, spliceLen)
-          
-          // Update the original saved buffer to be the shorter length
-          val newLength: Int = startingOffset + prefixSize - starts(startingCount)
-          assert(newLength > 0, s"Invalid newLength: $newLength == $startingOffset + $prefixSize - ${starts(startingCount)}")
-          lengths(startingCount) = newLength
-        }
-        
-        // Restore the saved array and offset
-        _array = savedArray
-        _offset = savedOffset
-        _start = savedStart
-        _length = savedLength
-        pooled = savedPooled
-      }
-    }
-    
-//    if (debug) {
-//      debug(s"lengthPrefixed($maxPrefixSize) - END")
-//      debug(debugInfo)
-//    }
-  }
-  
   /**
    * Directly use this byte array (zero-copy).  If there are bytes left
    * in our current buffer to make it useful then we will splice this into
@@ -874,7 +672,7 @@ final class FMByteArrayOutputStream(
       _length = 0
     }
     
-    check
+    check()
   }
   
   private def addBuffer(minSize: Int): Unit = {  
@@ -893,11 +691,11 @@ final class FMByteArrayOutputStream(
     _start = 0
     _offset = 0
     
-    check
+    check()
   }
   
   private def saveCurrentBuffer(): Unit = {
-    check
+    check()
     
     val arr: Array[Byte] = _array
     val start: Int = _start
@@ -923,7 +721,7 @@ final class FMByteArrayOutputStream(
     isPooled(bufIdx) = pooled
     _bufferCount = bufIdx + 1
     
-    check
+    check()
   }
   
   /**
@@ -931,7 +729,7 @@ final class FMByteArrayOutputStream(
    */
   private def spliceBuffer(idx: Int, buf: Array[Byte], start: Int, len: Int): Unit = {
     checkOffsetAndLength("spliceBuffer", buf, start, len)
-    check
+    check()
     
     ensureAvailableBufferSlot()
     
@@ -949,16 +747,9 @@ final class FMByteArrayOutputStream(
     
     _bufferCount += 1
     
-    check
+    check()
   }
-  
-  private def initArrays(): Unit = {
-    buffers = new Array(InitialArrayCapacity)
-    starts = new Array(InitialArrayCapacity)
-    lengths = new Array(InitialArrayCapacity)
-    isPooled = new Array(InitialArrayCapacity)
-  }
-  
+
   private def ensureAvailableBufferSlot(): Unit = {
     if (null == buffers || buffers.length - _bufferCount == 0) {
       val newSize: Int = if (null == buffers) InitialArrayCapacity else buffers.length * 2
@@ -1025,7 +816,7 @@ final class FMByteArrayOutputStream(
     checkOffsetAndLength("shiftArrayNegative", arr, start, len)
     var i: Int = start
     val end: Int = start + len
-    while(i <= end) {
+    while (i <= end) {
       arr(i + shift) = arr(i)
       i += 1
     }
@@ -1037,7 +828,7 @@ final class FMByteArrayOutputStream(
     checkOffsetAndLength("shiftArrayNegative", arr, start, len)
     var i: Int = start
     val end: Int = start + len
-    while(i < end) {
+    while (i < end) {
       arr(i + shift) = arr(i)
       i += 1
     }
@@ -1049,7 +840,7 @@ final class FMByteArrayOutputStream(
     checkOffsetAndLength("shiftArrayNegative", arr, start, len)
     var i: Int = start
     val end: Int = start + len
-    while(i < end) {
+    while (i < end) {
       arr(i + shift) = arr(i)
       i += 1
     }
@@ -1061,7 +852,7 @@ final class FMByteArrayOutputStream(
     checkOffsetAndLength("shiftArrayNegative", arr, start, len)
     var i: Int = start
     val end: Int = start + len
-    while(i < end) {
+    while (i < end) {
       arr(i + shift) = arr(i)
       i += 1
     }
@@ -1072,7 +863,7 @@ final class FMByteArrayOutputStream(
     assert(shift > 0 && start + len + shift <= arr.length, s"Invalid Shift Params: arr: $arr  start: $start  len: $len  shift: $shift")
     checkOffsetAndLength("shiftArrayPositive", arr, start, len)
     var i: Int = start + len - 1
-    while(i >= start) {
+    while (i >= start) {
       arr(i + shift) = arr(i)
       i -= 1
     }
@@ -1083,7 +874,7 @@ final class FMByteArrayOutputStream(
     assert(shift > 0 && start + len + shift <= arr.length, s"Invalid Shift Params: arr: $arr  start: $start  len: $len  shift: $shift")
     checkOffsetAndLength("shiftArrayPositive", arr, start, len)
     var i: Int = start + len - 1
-    while(i >= start) {
+    while (i >= start) {
       arr(i + shift) = arr(i)
       i -= 1
     }
@@ -1094,7 +885,7 @@ final class FMByteArrayOutputStream(
     assert(shift > 0 && start + len + shift <= arr.length, s"Invalid Shift Params: arr: $arr  start: $start  len: $len  shift: $shift")
     checkOffsetAndLength("shiftArrayPositive", arr, start, len)
     var i: Int = start + len - 1
-    while(i >= start) {
+    while (i >= start) {
       arr(i + shift) = arr(i)
       i -= 1
     }
@@ -1105,20 +896,20 @@ final class FMByteArrayOutputStream(
     assert(shift > 0 && start + len + shift <= arr.length, s"Invalid Shift Params: arr: $arr  start: $start  len: $len  shift: $shift")
     checkOffsetAndLength("shiftArrayPositive", arr, start, len)
     var i: Int = start + len - 1
-    while(i >= start) {
+    while (i >= start) {
       arr(i + shift) = arr(i)
       i -= 1
     }
   }
   
-  final def totalSize: Int = {
-    check
+  def totalSize: Int = {
+    check()
     
     var size: Int = 0
     
     // Any saved buffers
     var i: Int = 0
-    var bufCount: Int = _bufferCount
+    val bufCount: Int = _bufferCount
     while (i < bufCount) {
       size += lengths(i)
       i += 1
@@ -1132,7 +923,7 @@ final class FMByteArrayOutputStream(
   
   /** Create a byte array out of the current data */
   def toByteArray: Array[Byte] = {
-    check
+    check()
     
     val dest: Array[Byte] = new Array(totalSize)
     var destIdx: Int = 0
@@ -1208,7 +999,7 @@ final class FMByteArrayOutputStream(
   @elidable(elidable.ASSERTION)
   def check(): Unit = dumpOnAssert {
     var i: Int = 0
-    while(i < bufferCount) {
+    while (i < bufferCount) {
       val buf: Array[Byte] = buffers(i)
       val s: Int = starts(i)
       val len: Int = lengths(i)
@@ -1246,7 +1037,7 @@ s"""
   
   bufferCount: $bufferCount
   
-  array: $array - ${if(null != array) array.toVector}
+  array: $array - ${if (null != array) array.toVector}
   start: $start
   offset: $offset
   length: $length
