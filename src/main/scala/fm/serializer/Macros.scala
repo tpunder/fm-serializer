@@ -18,7 +18,12 @@ package fm.serializer
 import scala.reflect.macros._
 
 object Macros {
-  private val isDebug: Boolean = false
+  /**
+   * Can enable debugging by setting the FM_SERIALIZER_DEBUG environment variable:
+   *
+   * FM_SERIALIZER_DEBUG=true sbt
+   */
+  private val isDebug: Boolean = System.getenv("FM_SERIALIZER_DEBUG") == "true"
   
   def makeSimpleObjectSerializer[T: c.WeakTypeTag](c: Context)(): c.Expr[SimpleObjectSerializer[T]] = wrap(c, s"makeSimpleObjectSerializer[${c.weakTypeOf[T]}]") {
     

@@ -469,4 +469,21 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
 
     nodes should equal (nodes2)
   }
+
+  //===============================================================================================
+  // Renamed Fields
+  //===============================================================================================
+
+  case class NonRenamed(foo: String, bar: Int)
+  case class Renamed(@RenameField("foo") renamed: String, bar: Int)
+
+  test("Renamed Fields") {
+    val p: NonRenamed = NonRenamed("Hello World", 123)
+    val renamed: Renamed = Renamed("Hello World", 123)
+
+    val bytes: BYTES = serialize(p)
+    val p2: Renamed = deserialize[Renamed](bytes)
+
+    p2 should equal (renamed)
+  }
 }
