@@ -29,6 +29,8 @@ trait PrimitiveImplicits {
   implicit val int:       IntPrimitive        = new IntPrimitive()
   implicit val long:      LongPrimitive       = new LongPrimitive()
   implicit val char:      CharPrimitive       = new CharPrimitive()
+
+  implicit val immutableByteArray: ImmutableByteArrayPrimitive  = new ImmutableByteArrayPrimitive()
   
   import java.lang.{Boolean => JavaBoolean, Character => JavaChar, Float => JavaFloat, Double => JavaDouble, Integer => JavaInt, Long => JavaLong}
   

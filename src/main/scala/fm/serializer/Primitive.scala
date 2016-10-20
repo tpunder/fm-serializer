@@ -15,11 +15,12 @@
  */
 package fm.serializer
 
+import fm.common.ImmutableArray
+import fm.serializer.protobuf.ProtobufOutput
+import scala.annotation.tailrec
+import scala.collection.mutable.Builder
 import scala.reflect.{ClassTag, classTag}
 import scala.reflect.runtime.universe._
-import scala.collection.mutable.Builder
-import scala.annotation.tailrec
-import fm.serializer.protobuf.ProtobufOutput
 
 object Primitive extends PrimitiveImplicits {
   val unsignedInt:  UnsignedIntPrimitive  = new UnsignedIntPrimitive()
@@ -109,6 +110,16 @@ final class ByteArrayPrimitive extends Primitive[Array[Byte]] {
   def defaultValue: Array[Byte] = null
   def deserializeRaw(input: RawInput): Array[Byte] = input.readRawByteArray()
   def deserializeNested(input: NestedInput): Array[Byte] = input.readNestedByteArray()
+}
+
+final class ImmutableByteArrayPrimitive extends Primitive[ImmutableArray[Byte]] {
+  def serializeRaw(output: RawOutput, v: ImmutableArray[Byte]): Unit = output.writeRawByteArray(v.toArray)
+  def serializeNested(output: NestedOutput, v: ImmutableArray[Byte]): Unit = output.writeNestedByteArray(v.toArray)
+  def serializeField(output: FieldOutput, number: Int, name: String, v: ImmutableArray[Byte]): Unit = output.writeFieldByteArray(number, name, v.toArray)
+
+  def defaultValue: ImmutableArray[Byte] = null
+  def deserializeRaw(input: RawInput): ImmutableArray[Byte] = ImmutableArray.wrap(input.readRawByteArray())
+  def deserializeNested(input: NestedInput): ImmutableArray[Byte] = ImmutableArray.wrap(input.readNestedByteArray())
 }
 
 final class IntPrimitive extends Primitive[Int] {

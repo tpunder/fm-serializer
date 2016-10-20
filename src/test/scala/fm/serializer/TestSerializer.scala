@@ -15,14 +15,20 @@
  */
 package fm.serializer
 
+import fm.common.{IP, ImmutableArray, ImmutableDate, UUID}
 import java.io.File
 import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
+import java.nio.charset.StandardCharsets.UTF_8
 import java.time.LocalDate
 import java.util.{Calendar, Date}
+import org.bson.types.ObjectId
 import org.scalatest.{FunSuite, Matchers}
 import scala.collection.JavaConverters._
 
 trait TestSerializer[BYTES] extends FunSuite with Matchers {
+  // Does the serialization method support serializing raw collections
+  def supportsRawCollections: Boolean = true
+
   def serialize[T](v: T)(implicit ser: Serializer[T]): BYTES
   def deserialize[T](bytes: BYTES)(implicit deser: Deserializer[T]): T
   
@@ -192,7 +198,25 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     children: IndexedSeq[Baz] = Vector(Baz(children = Vector.empty), Baz(children = Vector.empty)),
     char: Char = 'A',
     calendar: Calendar = Calendar.getInstance,
-    localDate: LocalDate = LocalDate.now
+    localDate: LocalDate = LocalDate.now,
+    immutableDate: ImmutableDate = ImmutableDate(),
+    someImmutableDate: Option[ImmutableDate] = Some(ImmutableDate()),
+    noneImmutableDate: Option[ImmutableDate] = None,
+    immutableDates: Vector[ImmutableDate] = Vector(ImmutableDate(1), ImmutableDate(2), ImmutableDate()),
+    objectId: ObjectId = new ObjectId(),
+    someObjectId: Option[ObjectId] = Some(new ObjectId()),
+    noneObjectId: Option[ObjectId] = None,
+    objectIds: Vector[ObjectId] = Vector(new ObjectId(), new ObjectId(), new ObjectId(), new ObjectId()),
+    ipMin: IP = IP.empty,
+    ipMid: IP = IP("123.123.123.123"),
+    ipMax: IP = IP("255.255.255.255"),
+    ipNone: Option[IP] = None,
+    ipSome: Option[IP] = Some(IP("192.168.0.1")),
+    bytes: ImmutableArray[Byte] = ImmutableArray.wrap("Hello World!".getBytes(UTF_8)),
+    moreBytes: ImmutableArray[Byte] = ImmutableArray.wrap(("Hello \r\t\n \\ / \" \b\f oneByte: \u0024 twoByte: \u00A2 threeByte: \u20AC   World!"*1024).getBytes(UTF_8)),
+    uuid: UUID = UUID(),
+    uuidSome: Option[UUID] = Some(UUID()),
+    uuidNone: Option[UUID] = None
   )
   
   case class MostlyEmptyFoo(@Field(19) bar: Bar)
@@ -401,10 +425,10 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     
     val bytes: BYTES = serialize(obj)
     
-    if (bytes.isInstanceOf[Array[Byte]]) {
-      val b: Array[Byte] = bytes.asInstanceOf[Array[Byte]]
-      println("BYTES: "+b.toSeq)
-    }
+//    if (bytes.isInstanceOf[Array[Byte]]) {
+//      val b: Array[Byte] = bytes.asInstanceOf[Array[Byte]]
+//      println("BYTES: "+b.toSeq)
+//    }
 
     val obj2: NonCompressedNums = deserialize[NonCompressedNums](bytes)
     
@@ -418,13 +442,31 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
   
   case class Node(name: String, children: IndexedSeq[Node] = Vector.empty)
   
-  test("Nested Nodes") {
-    val n: Node = Node("one", children = Vector(Node("foo"), Node("bar")))
+  test("Nested Nodes - Single Node") {
+    val node: Node = Node("one", children = Vector(Node("foo"), Node("bar")))
     
+    val bytes: BYTES = serialize(node)
+    val node2: Node = deserialize[Node](bytes)
+    
+    node should equal (node2)
+  }
+
+  test("Nested Nodes - Single Node - Multi Level Nesting") {
+    val node: Node = Node("one", children = Vector(Node("foo", children = Vector(Node("asd"), Node("qwe"))), Node("bar")))
+
+    val bytes: BYTES = serialize(node)
+    val node2: Node = deserialize[Node](bytes)
+
+    node should equal (node2)
+  }
+
+  if (supportsRawCollections) test("Nested Nodes - Multiple Nodes") {
+    val n: Node = Node("one", children = Vector(Node("foo"), Node("bar")))
+
     val nodes: IndexedSeq[Node] = Vector(n, n, n)
     val bytes: BYTES = serialize(nodes)
     val nodes2: IndexedSeq[Node] = deserialize[IndexedSeq[Node]](bytes)
-    
+
     nodes should equal (nodes2)
   }
 }

@@ -15,9 +15,9 @@
  */
 package fm.serializer
 
-import fm.serializer.protobuf.ProtobufOutput
+import fm.serializer.bson.BsonImplicits
 
-object Serializer extends SerializerLowPrioImplicits with PrimitiveImplicits with CommonTypeImplicits {
+object Serializer extends SerializerLowPrioImplicits with PrimitiveImplicits with CommonTypeImplicits with BsonImplicits {
   /**
    * Call this for creating an "implicit val" that can be picked up by serialize() calls
    */

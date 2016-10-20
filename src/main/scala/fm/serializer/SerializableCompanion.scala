@@ -1,7 +1,9 @@
 package fm.serializer
 
+import fm.serializer.bson.BSON
 import fm.serializer.json.JSON
 import fm.serializer.protobuf.Protobuf
+import org.bson.{BsonDocument, RawBsonDocument}
 
 /**
  * Usage Pattern:
@@ -35,6 +37,18 @@ trait SerializableCompanion[A] {
   //
   def toBytes(v: A): Array[Byte] = Protobuf.toBytes(v)(serializer)  
   def fromBytes(bytes: Array[Byte]): A = Protobuf.fromBytes(bytes)(serializer)
+
+  //
+  // BSON Methods
+  //
+  def toBsonBytes(v: A): Array[Byte] = BSON.toBsonBytes(v)(serializer)
+  def fromBsonBytes(bytes: Array[Byte]): A = BSON.fromBsonBytes(bytes)(serializer)
+
+  def toRawBsonDocument(v: A): RawBsonDocument = BSON.toRawBsonDocument(v)(serializer)
+  def toBsonDocument(v: A): BsonDocument = BSON.toBsonDocument(v)(serializer)
+  def addToBsonDocument(v: A, doc: BsonDocument): Unit = BSON.addToBsonDocument(v, doc)(serializer)
+
+  def fromBsonDocument(doc: BsonDocument): A = BSON.fromBsonDocument(doc)(serializer)
 }
 
 /**
@@ -58,4 +72,8 @@ trait SerializableInstance[A] { self: A =>
   def toPrettyJSON: String = companion.toPrettyJSON(this)
   
   def toBytes: Array[Byte] = companion.toBytes(this)
+
+  def toRawBsonDocument: RawBsonDocument = companion.toRawBsonDocument(this)
+  def toBsonDocument: BsonDocument = companion.toBsonDocument(this)
+  def addToBsonDocument(doc: BsonDocument): Unit = companion.addToBsonDocument(this, doc)
 }

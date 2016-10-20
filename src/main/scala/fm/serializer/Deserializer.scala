@@ -15,7 +15,9 @@
  */
 package fm.serializer
 
-object Deserializer extends DeserializerLowPrioImplicits with PrimitiveImplicits with CommonTypeImplicits {
+import fm.serializer.bson.BsonImplicits
+
+object Deserializer extends DeserializerLowPrioImplicits with PrimitiveImplicits with CommonTypeImplicits with BsonImplicits {
   
 }
 

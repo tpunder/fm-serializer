@@ -15,6 +15,7 @@
  */
 package fm.serializer
 
+import fm.common.IP
 import java.io.File
 import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
 import java.util.{Calendar, Date}
@@ -30,7 +31,12 @@ trait CommonTypeImplicits {
 
   implicit val javaFile: MappedSimpleSerializer[String,File] = Primitive.string.map(_.toString, new File(_), null)
   implicit val javaBigInteger: MappedSimpleSerializer[Array[Byte],JavaBigInteger] = Primitive.byteArray.map(_.toByteArray, new JavaBigInteger(_), null)
-  implicit val javaDate: MappedSimpleSerializer[Long,Date] = Primitive.long.map(_.getTime, new Date(_), null)
+
+  implicit val ip: IPSerializer = new IPSerializer()
+
+  // Handled by the BSON Implicits
+  //implicit val javaDate: MappedSimpleSerializer[Long,Date] = Primitive.long.map(_.getTime, new Date(_), null)
+
   implicit val javaCalendar: MappedSimpleSerializer[Long,Calendar] = Primitive.long.map(_.getTime.getTime, toCalendar, null)
   
   private def toCalendar(millis: Long): Calendar = {
@@ -73,6 +79,16 @@ trait CommonTypeImplicits {
 //    val dayOfMonth: Int = n % 100
 //    LocalDate.of(year, month, dayOfMonth)
 //  }
-  
-  
+}
+
+final class IPSerializer extends SimpleSerializer[IP] {
+  private[this] val primitive: SignedIntPrimitive = Primitive.signedInt
+
+  def serializeRaw(output: RawOutput, v: IP): Unit = primitive.serializeRaw(output, v.intValue)
+  def serializeNested(output: NestedOutput, v: IP): Unit = primitive.serializeNested(output, v.intValue)
+  def serializeField(output: FieldOutput, number: Int, name: String, v: IP): Unit = primitive.serializeField(output, number, name, v.intValue)
+
+  def defaultValue: IP = IP.empty
+  def deserializeRaw(input: RawInput): IP = IP(primitive.deserializeRaw(input))
+  def deserializeNested(input: NestedInput): IP = IP(primitive.deserializeNested(input))
 }
