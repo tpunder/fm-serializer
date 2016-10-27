@@ -82,11 +82,14 @@ trait CommonTypeImplicits {
 }
 
 final class IPSerializer extends SimpleSerializer[IP] {
-  private[this] val primitive: SignedIntPrimitive = Primitive.signedInt
+  // Note: We are using a Long to represent the IPv4 to avoid any Int32 signed issues
+  //       and specifically to make ranged checks work on IPs that are stored in a
+  //       database (e.g. MongoDB).
+  private[this] val primitive: LongPrimitive = Primitive.long
 
-  def serializeRaw(output: RawOutput, v: IP): Unit = primitive.serializeRaw(output, v.intValue)
-  def serializeNested(output: NestedOutput, v: IP): Unit = primitive.serializeNested(output, v.intValue)
-  def serializeField(output: FieldOutput, number: Int, name: String, v: IP): Unit = primitive.serializeField(output, number, name, v.intValue)
+  def serializeRaw(output: RawOutput, v: IP): Unit = primitive.serializeRaw(output, v.longValue)
+  def serializeNested(output: NestedOutput, v: IP): Unit = primitive.serializeNested(output, v.longValue)
+  def serializeField(output: FieldOutput, number: Int, name: String, v: IP): Unit = primitive.serializeField(output, number, name, v.longValue)
 
   def defaultValue: IP = IP.empty
   def deserializeRaw(input: RawInput): IP = IP(primitive.deserializeRaw(input))
