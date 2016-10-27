@@ -25,11 +25,11 @@ final class UUIDSerializer extends BsonSerializer[UUID] {
   protected val normal: SimpleSerializer[UUID] = Primitive.string.map[UUID](defaultValue){ id: UUID => id.toHex }{ hex: String => UUID(hex) }
 
   def defaultValue: UUID = null
-  def deserializeRaw(input: BSONInput): UUID = fromBsonBinary(input.readRawBsonBinary())
-  def deserializeNested(input: BSONInput): UUID = fromBsonBinary(input.readNestedBsonBinary())
-  def serializeRaw(output: BSONOutput, v: UUID): Unit = output.writeRawBsonBinary(toBsonBinary(v))
-  def serializeNested(output: BSONOutput, v: UUID): Unit = output.writeNestedBsonBinary(toBsonBinary(v))
-  def serializeField(output: BSONOutput, number: Int, name: String, v: UUID): Unit = output.writeFieldBsonBinary(number, name, toBsonBinary(v))
+  def deserializeRaw(input: BSONInput): UUID = if (input.nextValueIsNull) null else fromBsonBinary(input.readRawBsonBinary())
+  def deserializeNested(input: BSONInput): UUID = if (input.nextValueIsNull) null else fromBsonBinary(input.readNestedBsonBinary())
+  def serializeRaw(output: BSONOutput, v: UUID): Unit = if (null != v) output.writeRawBsonBinary(toBsonBinary(v))
+  def serializeNested(output: BSONOutput, v: UUID): Unit = if (null != v) output.writeNestedBsonBinary(toBsonBinary(v))
+  def serializeField(output: BSONOutput, number: Int, name: String, v: UUID): Unit = if (null != v) output.writeFieldBsonBinary(number, name, toBsonBinary(v)) else output.writeFieldNull(number, name)
 
   private def toBsonBinary(v: UUID): BsonBinary = new BsonBinary(BsonBinarySubType.UUID_STANDARD, v.toByteArray())
   private def fromBsonBinary(b: BsonBinary): UUID = UUID(b.getData())
@@ -39,33 +39,33 @@ final class ObjectIdSerializer extends BsonSerializer[ObjectId] {
   protected val normal: SimpleSerializer[ObjectId] = Primitive.string.map[ObjectId](defaultValue){ id: ObjectId => id.toHexString }{ hex: String => new ObjectId(hex) }
 
   def defaultValue: ObjectId = null
-  def deserializeRaw(input: BSONInput): ObjectId = input.readRawObjectId()
-  def deserializeNested(input: BSONInput): ObjectId = input.readNestedObjectId()
-  def serializeRaw(output: BSONOutput, v: ObjectId): Unit = output.writeRawObjectId(v)
+  def deserializeRaw(input: BSONInput): ObjectId = if (input.nextValueIsNull) null else input.readRawObjectId()
+  def deserializeNested(input: BSONInput): ObjectId = if (input.nextValueIsNull) null else input.readNestedObjectId()
+  def serializeRaw(output: BSONOutput, v: ObjectId): Unit = if (null != v) output.writeRawObjectId(v)
   def serializeNested(output: BSONOutput, v: ObjectId): Unit = output.writeNestedObjectId(v)
-  def serializeField(output: BSONOutput, number: Int, name: String, v: ObjectId): Unit = output.writeFieldObjectId(number, name, v)
+  def serializeField(output: BSONOutput, number: Int, name: String, v: ObjectId): Unit = if (null != v) output.writeFieldObjectId(number, name, v) else output.writeFieldNull(number, name)
 }
 
 final class DateSerializer extends BsonSerializer[Date] {
   protected val normal: SimpleSerializer[Date] = Primitive.long.map[Date](defaultValue){ date: Date => date.getTime }{ time: Long => new Date(time) }
 
   def defaultValue: Date = null
-  def deserializeRaw(input: BSONInput): Date = new Date(input.readRawDateTime())
-  def deserializeNested(input: BSONInput): Date = new Date(input.readNestedDateTime())
-  def serializeRaw(output: BSONOutput, v: Date): Unit = output.writeRawDateTime(v.getTime)
-  def serializeNested(output: BSONOutput, v: Date): Unit = output.writeNestedDateTime(v.getTime)
-  def serializeField(output: BSONOutput, number: Int, name: String, v: Date): Unit = output.writeFieldDateTime(number, name, v.getTime)
+  def deserializeRaw(input: BSONInput): Date = if (input.nextValueIsNull) null else new Date(input.readRawDateTime())
+  def deserializeNested(input: BSONInput): Date = if (input.nextValueIsNull) null else new Date(input.readNestedDateTime())
+  def serializeRaw(output: BSONOutput, v: Date): Unit = if (null != v) output.writeRawDateTime(v.getTime)
+  def serializeNested(output: BSONOutput, v: Date): Unit = if (null != v) output.writeNestedDateTime(v.getTime)
+  def serializeField(output: BSONOutput, number: Int, name: String, v: Date): Unit = if (null != v) output.writeFieldDateTime(number, name, v.getTime) else output.writeFieldNull(number, name)
 }
 
 final class ImmutableDateSerializer extends BsonSerializer[ImmutableDate] {
   protected val normal: SimpleSerializer[ImmutableDate] = Primitive.long.map[ImmutableDate](defaultValue){ date: ImmutableDate => date.getTime }{ time: Long => new ImmutableDate(time) }
 
   def defaultValue: ImmutableDate = null.asInstanceOf[ImmutableDate]
-  def deserializeRaw(input: BSONInput): ImmutableDate = new ImmutableDate(input.readRawDateTime())
-  def deserializeNested(input: BSONInput): ImmutableDate = new ImmutableDate(input.readNestedDateTime())
-  def serializeRaw(output: BSONOutput, v: ImmutableDate): Unit = output.writeRawDateTime(v.getTime)
-  def serializeNested(output: BSONOutput, v: ImmutableDate): Unit = output.writeNestedDateTime(v.getTime)
-  def serializeField(output: BSONOutput, number: Int, name: String, v: ImmutableDate): Unit = output.writeFieldDateTime(number, name, v.getTime)
+  def deserializeRaw(input: BSONInput): ImmutableDate = if (input.nextValueIsNull) null else new ImmutableDate(input.readRawDateTime())
+  def deserializeNested(input: BSONInput): ImmutableDate = if (input.nextValueIsNull) null else new ImmutableDate(input.readNestedDateTime())
+  def serializeRaw(output: BSONOutput, v: ImmutableDate): Unit = if (null != v) output.writeRawDateTime(v.getTime)
+  def serializeNested(output: BSONOutput, v: ImmutableDate): Unit = if (null != v) output.writeNestedDateTime(v.getTime)
+  def serializeField(output: BSONOutput, number: Int, name: String, v: ImmutableDate): Unit = if (null != v) output.writeFieldDateTime(number, name, v.getTime) else output.writeFieldNull(number, name)
 }
 
 final class MaxKeySerializer extends BsonSerializer[MaxKey] {
@@ -90,7 +90,7 @@ final class MinKeySerializer extends BsonSerializer[MinKey] {
   def serializeField(output: BSONOutput, number: Int, name: String, v: MinKey): Unit = output.writeFieldMinKey(number, name)
 }
 
-abstract class BsonSerializer[T] extends SimpleSerializer[T] {
+abstract class BsonSerializer[T <: AnyRef] extends SimpleSerializer[T] {
   protected def normal: SimpleSerializer[T]
 
   def deserializeRaw(input: BSONInput): T

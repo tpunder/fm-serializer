@@ -88,13 +88,15 @@ final class BSONInput(reader: BsonReader) extends Input {
 
   // Special Types
   def readRawBsonBinary(): BsonBinary = {
+    val res: BsonBinary = if (nextValueIsNull) null else reader.readBinaryData()
     clearBsonType()
-    reader.readBinaryData()
+    res
   }
 
   def readRawObjectId(): ObjectId = {
+    val res: ObjectId = if (nextValueIsNull) null else reader.readObjectId()
     clearBsonType()
-    reader.readObjectId()
+    res
   }
 
   def readRawDateTime(): Long = {
@@ -103,15 +105,23 @@ final class BSONInput(reader: BsonReader) extends Input {
   }
 
   def readRawMaxKey(): MaxKey = {
+    val res: MaxKey = if (nextValueIsNull) null else {
+      reader.readMaxKey()
+      DefaultMaxKey
+    }
+
     clearBsonType()
-    reader.readMaxKey()
-    DefaultMaxKey
+    res
   }
 
   def readRawMinKey(): MinKey = {
+    val res: MinKey = if (nextValueIsNull) null else {
+      reader.readMinKey()
+      DefaultMinKey
+    }
+
     clearBsonType()
-    reader.readMinKey()
-    DefaultMinKey
+    res
   }
 
   // Basic Types
@@ -131,16 +141,16 @@ final class BSONInput(reader: BsonReader) extends Input {
   }
 
   def readRawString(): String = {
-    if (nextValueIsNull) return null
-
+    val res: String = if (nextValueIsNull) null else reader.readString()
     clearBsonType()
-    reader.readString()
+    res
   }
 
   // Bytes
   def readRawByteArray(): Array[Byte] = {
+    val res: Array[Byte] = if (nextValueIsNull) null else reader.readBinaryData().getData
     clearBsonType()
-    reader.readBinaryData().getData
+    res
   }
 
   // Ints -- BSON only has signed ints

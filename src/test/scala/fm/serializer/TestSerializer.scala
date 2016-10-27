@@ -198,15 +198,32 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     children: IndexedSeq[Baz] = Vector(Baz(children = Vector.empty), Baz(children = Vector.empty)),
     char: Char = 'A',
     calendar: Calendar = Calendar.getInstance,
+    calendarNull: Calendar = null,
+    dateNull: Date = null,
     localDate: LocalDate = LocalDate.now,
+    localDateNull: LocalDate = null,
+    bsonTypes: BsonTypes = BsonTypes(),
+    fmCommonTypes: FMCommonTypes = FMCommonTypes()
+  )
+
+  case class BsonTypes(
+    objectId: ObjectId = new ObjectId(),
+    objectIdNull: ObjectId = null,
+    someObjectId: Option[ObjectId] = Some(new ObjectId()),
+    noneObjectId: Option[ObjectId] = None,
+    objectIds: Vector[ObjectId] = Vector(new ObjectId(), new ObjectId(), new ObjectId(), new ObjectId())
+    // Nulls within collections aren't fully supported yet
+    //objectIdsWithNulls: Vector[ObjectId] = Vector(new ObjectId(), null, new ObjectId(), null)
+  )
+
+  case class FMCommonTypes(
     immutableDate: ImmutableDate = ImmutableDate(),
+    immutableDateNull: ImmutableDate = null,
     someImmutableDate: Option[ImmutableDate] = Some(ImmutableDate()),
     noneImmutableDate: Option[ImmutableDate] = None,
     immutableDates: Vector[ImmutableDate] = Vector(ImmutableDate(1), ImmutableDate(2), ImmutableDate()),
-    objectId: ObjectId = new ObjectId(),
-    someObjectId: Option[ObjectId] = Some(new ObjectId()),
-    noneObjectId: Option[ObjectId] = None,
-    objectIds: Vector[ObjectId] = Vector(new ObjectId(), new ObjectId(), new ObjectId(), new ObjectId()),
+    // Nulls within collections aren't fully supported yet
+    //immutableDatesNull: Vector[ImmutableDate] = Vector(ImmutableDate(1), ImmutableDate(2), null),
     ipMin: IP = IP.empty,
     ipMid: IP = IP("123.123.123.123"),
     ipMax: IP = IP("255.255.255.255"),
@@ -214,11 +231,13 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     ipSome: Option[IP] = Some(IP("192.168.0.1")),
     bytes: ImmutableArray[Byte] = ImmutableArray.wrap("Hello World!".getBytes(UTF_8)),
     moreBytes: ImmutableArray[Byte] = ImmutableArray.wrap(("Hello \r\t\n \\ / \" \b\f oneByte: \u0024 twoByte: \u00A2 threeByte: \u20AC   World!"*1024).getBytes(UTF_8)),
+    bytesNull: ImmutableArray[Byte] = null,
     uuid: UUID = UUID(),
+    uuidNull: UUID = null,
     uuidSome: Option[UUID] = Some(UUID()),
     uuidNone: Option[UUID] = None
   )
-  
+
   case class MostlyEmptyFoo(@Field(19) bar: Bar)
   
   test("Foo") {

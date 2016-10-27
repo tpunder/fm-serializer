@@ -49,4 +49,12 @@ trait RawInput {
   
   // Collections
   def readRawCollection[T](f: CollectionInput => T): T
+
+  /**
+   * Returns true if the next value is known to be null otherwise false if the value is not null or is unknown.
+   * This means that even if the next value ends up being null this can return false.
+   *
+   * Note: If the next value is null then this method should consume that input
+   */
+  def nextValueIsNull: Boolean
 }

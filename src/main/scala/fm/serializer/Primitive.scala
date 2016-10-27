@@ -113,13 +113,13 @@ final class ByteArrayPrimitive extends Primitive[Array[Byte]] {
 }
 
 final class ImmutableByteArrayPrimitive extends Primitive[ImmutableArray[Byte]] {
-  def serializeRaw(output: RawOutput, v: ImmutableArray[Byte]): Unit = output.writeRawByteArray(v.toArray)
-  def serializeNested(output: NestedOutput, v: ImmutableArray[Byte]): Unit = output.writeNestedByteArray(v.toArray)
-  def serializeField(output: FieldOutput, number: Int, name: String, v: ImmutableArray[Byte]): Unit = output.writeFieldByteArray(number, name, v.toArray)
+  def serializeRaw(output: RawOutput, v: ImmutableArray[Byte]): Unit = if (null != v) output.writeRawByteArray(v.toArray)
+  def serializeNested(output: NestedOutput, v: ImmutableArray[Byte]): Unit = if (null != v) output.writeNestedByteArray(v.toArray)
+  def serializeField(output: FieldOutput, number: Int, name: String, v: ImmutableArray[Byte]): Unit = if (null != v) output.writeFieldByteArray(number, name, v.toArray) else output.writeFieldNull(number, name)
 
   def defaultValue: ImmutableArray[Byte] = null
-  def deserializeRaw(input: RawInput): ImmutableArray[Byte] = ImmutableArray.wrap(input.readRawByteArray())
-  def deserializeNested(input: NestedInput): ImmutableArray[Byte] = ImmutableArray.wrap(input.readNestedByteArray())
+  def deserializeRaw(input: RawInput): ImmutableArray[Byte] = if (input.nextValueIsNull) null else ImmutableArray.wrap(input.readRawByteArray())
+  def deserializeNested(input: NestedInput): ImmutableArray[Byte] = if (input.nextValueIsNull) null else ImmutableArray.wrap(input.readNestedByteArray())
 }
 
 final class IntPrimitive extends Primitive[Int] {

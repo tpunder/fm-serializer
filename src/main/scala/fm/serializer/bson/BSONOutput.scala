@@ -27,8 +27,16 @@ final class BSONOutput(writer: BsonWriter) extends Output {
   //
 
   // Special types
-  def writeRawBsonBinary(value: BsonBinary): Unit = writer.writeBinaryData(value)
-  def writeRawObjectId(value: ObjectId): Unit = writer.writeObjectId(value)
+  def writeRawBsonBinary(value: BsonBinary): Unit = {
+    if (null == value) writer.writeNull()
+    else writer.writeBinaryData(value)
+  }
+
+  def writeRawObjectId(value: ObjectId): Unit = {
+    if (null == value) writer.writeNull()
+    else writer.writeObjectId(value)
+  }
+
   def writeRawDateTime(value: Long): Unit = writer.writeDateTime(value)
   def writeRawMaxKey(): Unit = writer.writeMaxKey()
   def writeRawMinKey(): Unit = writer.writeMinKey()
@@ -122,8 +130,16 @@ final class BSONOutput(writer: BsonWriter) extends Output {
   //
 
   // Special types
-  def writeFieldBsonBinary(number: Int, name: String, value: BsonBinary): Unit = writer.writeBinaryData(name, value)
-  def writeFieldObjectId(number: Int, name: String, value: ObjectId): Unit = writer.writeObjectId(name, value)
+  def writeFieldBsonBinary(number: Int, name: String, value: BsonBinary): Unit = {
+    if (null == value) writer.writeNull(name)
+    else writer.writeBinaryData(name, value)
+  }
+
+  def writeFieldObjectId(number: Int, name: String, value: ObjectId): Unit = {
+    if (null == value) writer.writeNull(name)
+    else writer.writeObjectId(name, value)
+  }
+
   def writeFieldDateTime(number: Int, name: String, value: Long): Unit = writer.writeDateTime(name, value)
   def writeFieldMaxKey(number: Int, name: String): Unit = writer.writeMaxKey(name)
   def writeFieldMinKey(number: Int, name: String): Unit = writer.writeMinKey(name)
