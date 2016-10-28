@@ -82,7 +82,7 @@ object Macros {
     val implicitTpe: Type = appliedType(typeOf[Serializer[_]], List(tpe))
     val nonMacroImplicit: Option[c.Expr[Serializer[T]]] = getImplicit(implicitTpe, withMacrosDisabled = true).map{ c.Expr[Serializer[T]](_) }
     
-    nonMacroImplicit orElse findCommonType[T] orElse findOptionSerializer[T] orElse findCollectionSerializer[T] orElse tryMakeObjectSerializer[T] getOrElse { c.abort(c.enclosingPosition, s"Couldn't find Serializer for $tpe") }
+    nonMacroImplicit orElse findCommonType[T] orElse findOptionSerializer[T] orElse findCollectionSerializer[T] orElse findAnyValSerializer[T] orElse tryMakeObjectSerializer[T] getOrElse { c.abort(c.enclosingPosition, s"Couldn't find Serializer for $tpe") }
   }
   
   def makeDeserializer[T: c.WeakTypeTag](c: Context): c.Expr[Deserializer[T]] = wrap(c, s"makeDeserializer[${c.weakTypeOf[T]}]") {
@@ -96,7 +96,7 @@ object Macros {
     val implicitTpe: Type = appliedType(typeOf[Deserializer[_]], List(tpe))
     val nonMacroImplicit: Option[c.Expr[Deserializer[T]]] = getImplicit(implicitTpe, withMacrosDisabled = true).map{ c.Expr[Deserializer[T]](_) }
     
-    nonMacroImplicit orElse findCommonType[T] orElse findOptionDeserializer[T] orElse findCollectionDeserializer[T] orElse tryMakeObjectDeserializer[T] getOrElse { c.abort(c.enclosingPosition, s"Couldn't find Deserializer for $tpe") }
+    nonMacroImplicit orElse findCommonType[T] orElse findOptionDeserializer[T] orElse findCollectionDeserializer[T] orElse findAnyValDeserializer[T] orElse tryMakeObjectDeserializer[T] getOrElse { c.abort(c.enclosingPosition, s"Couldn't find Deserializer for $tpe") }
   }
   
   private def wrap[T](c: Context, msg: String)(f: => T): T = {

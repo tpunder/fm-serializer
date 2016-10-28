@@ -38,7 +38,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
       }
     }
 
-    private val infos: Vector[FieldSerializationInfo] = fields.map{ new FieldSerializationInfo(objTpe, _, sharedSerializers) }
+    val infos: Vector[FieldSerializationInfo] = fields.map{ new FieldSerializationInfo(objTpe, _, sharedSerializers) }
     
     // We filter out empty names (which will later be references to "this")
     def serializerDeclarations: Vector[ValDef] = sharedSerializers.filterNot{ case (_,name) => name == nme.EMPTY }.map{ case (tpe, name) =>      
@@ -68,7 +68,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
       }
     }
     
-    private val infos: Vector[FieldDeserializationInfo] = fields.map{ new FieldDeserializationInfo(objTpe, _, sharedDeserializers) }
+    val infos: Vector[FieldDeserializationInfo] = fields.map{ new FieldDeserializationInfo(objTpe, _, sharedDeserializers) }
     
     def deserializerDeclarations: Vector[ValDef] = sharedDeserializers.filterNot{ case (_,name) => name == nme.EMPTY }.map{ case (tpe, name) =>
       getImplicit(appliedType(typeOf[Deserializer[_]], List(tpe)), withMacrosDisabled = true) match {
@@ -615,6 +615,77 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
       q"fm.serializer.OptionDeserializer[$arg]()"
     } else null
       
+    Option(tree).map{ ctx.Expr[Deserializer[T]](_) }
+  }
+
+  /**
+   * Lookup an AnyVal Serializer
+   */
+  def findAnyValSerializer[T: WeakTypeTag]: Option[Expr[Serializer[T]]] = {
+    val tpe: Type = weakTypeOf[T]
+
+    log(s"findAnyValSerializer($tpe)")
+
+    val tree: Tree = if (tpe <:< typeOf[AnyVal]) {
+      val name: TermName = newTermName(ctx.fresh("anyValSerializer"))
+
+      // Since this is an AnyVal there should be a constructor that
+      // only has a single val parameter. makeFieldImplsForCaseClass
+      // should return that single param
+      val fields: Vector[FieldImpl] = fillInType(tpe, cleanFieldImpls(makeFieldImplsForCaseClass(tpe)))
+
+      val serInfo: ObjectSerializationInfo = ObjectSerializationInfo(tpe, fields)
+      val field: FieldSerializationInfo = serInfo.infos.head
+
+      log(s"field: $field")
+
+      q"""
+        implicit object $name extends fm.serializer.Serializer[$tpe] {
+          ..${serInfo.serializerDeclarations}
+
+          def serializeRaw(output: fm.serializer.RawOutput, obj: $tpe): Unit = ${field.serializerTermName}.serializeRaw(output, ${field.fieldAccessor})
+          def serializeNested(output: fm.serializer.NestedOutput, obj: $tpe): Unit = ${field.serializerTermName}.serializeNested(output, ${field.fieldAccessor})
+          def serializeField(output: fm.serializer.FieldOutput, number: Int, name: String, obj: $tpe): Unit = ${field.serializerTermName}.serializeField(output, number, name, ${field.fieldAccessor})
+        }
+
+        $name
+       """
+    } else null
+
+    Option(tree).map{ ctx.Expr[Serializer[T]](_) }
+  }
+
+  def findAnyValDeserializer[T: WeakTypeTag]: Option[Expr[Deserializer[T]]] = {
+    val tpe: Type = weakTypeOf[T]
+
+    log(s"findAnyValDeserializer($tpe)")
+
+    val tree: Tree = if (tpe <:< typeOf[AnyVal]) {
+      val name: TermName = newTermName(ctx.fresh("anyValDeserializer"))
+
+      // Since this is an AnyVal there should be a constructor that
+      // only has a single val parameter. makeFieldImplsForCaseClass
+      // should return that single param
+      val fields: Vector[FieldImpl] = fillInType(tpe, cleanFieldImpls(makeFieldImplsForCaseClass(tpe)))
+
+      val serInfo: ObjectDeserializationInfo = ObjectDeserializationInfo(tpe, fields)
+      val field: FieldDeserializationInfo = serInfo.infos.head
+
+      log(s"field: $field")
+
+      q"""
+        implicit object $name extends fm.serializer.Deserializer[$tpe] {
+          ..${serInfo.deserializerDeclarations}
+          def defaultValue: $tpe = make(${field.deserializerTermName}.defaultValue)
+          def deserializeRaw(input: fm.serializer.RawInput): $tpe = make(${field.deserializerTermName}.deserializeRaw(input))
+          def deserializeNested(input: fm.serializer.NestedInput): $tpe = make(${field.deserializerTermName}.deserializeNested(input))
+          private def make(value: ${field.tpe}): $tpe = new ${tpe}(value)
+        }
+
+        $name
+       """
+    } else null
+
     Option(tree).map{ ctx.Expr[Deserializer[T]](_) }
   }
  

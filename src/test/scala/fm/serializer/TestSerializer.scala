@@ -505,4 +505,50 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
 
     p2 should equal (renamed)
   }
+
+  //===============================================================================================
+  // AnyVal Classes
+  //===============================================================================================
+
+  test("AnyVal classes should pass through serialization to the single field they wrap") {
+    val wrapped: WrappedHolder = WrappedHolder(WrappedInt(123))
+    val raw: IntHolder = IntHolder(123)
+
+    val wrappedBytes: BYTES = serialize(wrapped)
+
+    deserialize[WrappedHolder](wrappedBytes) should equal (wrapped)
+    deserialize[IntHolder](wrappedBytes) should equal (raw)
+
+    val rawBytes: BYTES = serialize(wrapped)
+
+    deserialize[WrappedHolder](rawBytes) should equal (wrapped)
+    deserialize[IntHolder](rawBytes) should equal (raw)
+  }
+
+  //===============================================================================================
+  // Overriden AnyVal Classes
+  //===============================================================================================
+
+  case class IPHolder(ip: IP)
+  case class IPAsLong(ip: Long)
+
+  test("IP Should serialize as a long using the manually defined Serializer instead of AnyVal") {
+    val ip: IPHolder = IPHolder(IP("255.255.255.255"))
+    val long: IPAsLong = IPAsLong(4294967295L)
+
+    val ipBytes: BYTES = serialize(ip)
+
+    deserialize[IPHolder](ipBytes) should equal (ip)
+    deserialize[IPAsLong](ipBytes) should equal (long)
+
+    val longBytes: BYTES = serialize(long)
+
+    deserialize[IPHolder](longBytes) should equal (ip)
+    deserialize[IPAsLong](longBytes) should equal (long)
+  }
 }
+
+// Since this is an AnyVal it must be defined separately
+case class WrappedInt(value: Int) extends AnyVal
+case class IntHolder(count: Int)
+case class WrappedHolder(count: WrappedInt)
