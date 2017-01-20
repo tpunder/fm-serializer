@@ -2,19 +2,30 @@ FMPublic
 
 name := "fm-serializer"
 
-version := "0.4.0-SNAPSHOT"
+version := "0.5.0-SNAPSHOT"
 
 description := "Scala Macro Based Serialization"
 
-scalaVersion := "2.11.8"
+scalaVersion := "2.12.1"
 
-crossScalaVersions := Seq("2.10.6", "2.11.8")
+crossScalaVersions := Seq("2.11.8", "2.12.1")
 
 // Needed for the JavaBean tests to work
 compileOrder := CompileOrder.JavaThenScala
 
 // NOTE: For -Xelide-below:  ALL == Enabled Assertions,  OFF == Disabled Assertions
-scalacOptions := Seq("-unchecked", "-deprecation", "-language:implicitConversions,experimental.macros", "-feature", "-Xlint", "-optimise", "-Yinline-warnings", "-Xelide-below", "OFF")
+scalacOptions := Seq(
+  "-unchecked",
+  "-deprecation",
+  "-language:implicitConversions,experimental.macros",
+  "-feature",
+  "-Xlint",
+  "-Ywarn-unused-import",
+  "-Xelide-below", "OFF"
+) ++ (if (scalaVersion.value.startsWith("2.12")) Seq(
+  // Scala 2.12 specific compiler flags
+  "-opt:l:classpath"
+) else Nil)
 
 // We don't want log buffering when running ScalaTest
 logBuffered in Test := false
@@ -31,7 +42,7 @@ libraryDependencies <++= (scalaVersion){ sv =>
 
 // SCALA Libraries
 libraryDependencies ++= Seq(
-  "com.frugalmechanic" %% "fm-common" % "0.7.0-SNAPSHOT"
+  "com.frugalmechanic" %% "fm-common" % "0.8.0-SNAPSHOT"
 )
 
 // JAVA Libraries
