@@ -24,7 +24,7 @@ scalacOptions := Seq(
   "-Xelide-below", "OFF"
 ) ++ (if (scalaVersion.value.startsWith("2.12")) Seq(
   // Scala 2.12 specific compiler flags
-  "-opt:l:classpath"
+  "-opt:l:project"
 ) else Nil)
 
 // We don't want log buffering when running ScalaTest
