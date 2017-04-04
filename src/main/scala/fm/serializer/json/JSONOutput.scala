@@ -18,11 +18,8 @@ package fm.serializer.json
 import fm.serializer.{FieldOutput, NestedOutput, Output}
 import fm.serializer.FMByteArrayOutputStream
 import fm.serializer.base64.Base64
-import java.nio.charset.StandardCharsets.UTF_8
 
 final class JSONOutput(outputNulls: Boolean = true, outputFalse: Boolean = true, outputZeros: Boolean = true, prettyFormat: Boolean = false, indent: String = "  ") extends Output {
-  import JSONOutput._
-  
   def allowStringMap: Boolean = true
   
   private[this] val out: FMByteArrayOutputStream = new FMByteArrayOutputStream()

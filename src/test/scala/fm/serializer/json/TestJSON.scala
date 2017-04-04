@@ -15,8 +15,7 @@
  */
 package fm.serializer.json
 
-import org.scalatest.{FunSuite, Matchers}
-import fm.serializer.{Deserializer, Field, Primitive, Serializer}
+import fm.serializer.{Deserializer, Field, Serializer}
 
 final class TestDefaultJSON extends TestJSON {
   def serialize[T](v: T)(implicit ser: Serializer[T]): String = JSON.toJSON[T](v)

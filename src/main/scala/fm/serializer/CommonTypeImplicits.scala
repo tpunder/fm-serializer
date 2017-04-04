@@ -17,9 +17,8 @@ package fm.serializer
 
 import fm.common.IP
 import java.io.File
-import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
-import java.util.{Calendar, Date}
-import java.time.LocalDate
+import java.math.{BigInteger => JavaBigInteger}
+import java.util.Calendar
 
 /**
  * These are implicit serializers/deserializers for common types that do not require the use of a macro to generate.

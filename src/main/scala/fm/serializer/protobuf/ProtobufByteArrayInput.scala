@@ -16,7 +16,7 @@
 package fm.serializer.protobuf
 
 import java.nio.charset.StandardCharsets.UTF_8
-import fm.serializer.{FieldInput, Input}
+import fm.serializer.Input
 
 /**
  * Optimized Input implementation for reading from a byte array that

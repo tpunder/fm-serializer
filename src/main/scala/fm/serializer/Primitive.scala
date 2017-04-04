@@ -16,11 +16,6 @@
 package fm.serializer
 
 import fm.common.ImmutableArray
-import fm.serializer.protobuf.ProtobufOutput
-import scala.annotation.tailrec
-import scala.collection.mutable.Builder
-import scala.reflect.{ClassTag, classTag}
-import scala.reflect.runtime.universe._
 
 object Primitive extends PrimitiveImplicits {
   val unsignedInt:  UnsignedIntPrimitive  = new UnsignedIntPrimitive()

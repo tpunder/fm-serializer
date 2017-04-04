@@ -17,10 +17,7 @@ package fm.serializer.protobuf
 
 import java.io.{InputStream, OutputStream}
 import fm.serializer.{Deserializer, Serializer}
-import fm.serializer.LinkedByteArrayOutputStream
 import fm.serializer.base64.Base64
-import fm.serializer.fastutil.FastByteArrayOutputStream
-import fm.serializer.FMByteArrayOutputStream
 
 object Protobuf {
 

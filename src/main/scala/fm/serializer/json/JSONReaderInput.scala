@@ -16,9 +16,6 @@
 package fm.serializer.json
 
 import java.io.Reader
-import java.lang.{StringBuilder => JavaStringBuilder}
-import fm.serializer.{CollectionInput, FieldInput, NestedInput, Input}
-import fm.serializer.base64.Base64
 
 final class JSONReaderInput(reader: Reader, options: JSONOptions) extends JSONInput(options) {
   /** Peek at the next character without consuming it */

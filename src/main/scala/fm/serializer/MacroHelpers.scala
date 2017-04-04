@@ -19,7 +19,6 @@ import fm.common.Implicits._
 import java.lang.{Iterable => JavaIterable}
 import java.util.{Collection => JavaCollection}
 import scala.collection.generic.{CanBuildFrom, Growable}
-import scala.reflect.ClassTag
 import scala.reflect.macros._
 import scala.util.Try
 

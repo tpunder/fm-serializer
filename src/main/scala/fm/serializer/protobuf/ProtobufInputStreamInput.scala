@@ -18,7 +18,7 @@ package fm.serializer.protobuf
 import java.io.{ByteArrayOutputStream, InputStream}
 import java.nio.charset.StandardCharsets.UTF_8
 
-import fm.serializer.{FieldInput, Input}
+import fm.serializer.Input
 
 // TODO
 // TODO: Check if this patch needs to be ported: https://code.google.com/p/protobuf/source/diff?spec=svn349&r=349&format=side&path=/trunk/java/src/main/java/com/google/protobuf/CodedInputStream.java

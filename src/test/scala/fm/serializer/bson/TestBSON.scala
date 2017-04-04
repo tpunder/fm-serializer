@@ -15,8 +15,7 @@
  */
 package fm.serializer.bson
 
-import org.scalatest.{FunSuite, Matchers}
-import fm.serializer.{Deserializer, Field, Primitive, Serializer, TestSerializer}
+import fm.serializer.{Deserializer, Serializer, TestSerializer}
 import org.bson.BsonDocument
 
 final class TestBsonDocument extends TestSerializer[BsonDocument] {

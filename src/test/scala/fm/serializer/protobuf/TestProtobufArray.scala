@@ -15,8 +15,7 @@
  */
 package fm.serializer.protobuf
 
-import org.scalatest.{FunSuite, Matchers}
-import fm.serializer.{Deserializer, Primitive, Serializer}
+import fm.serializer.{Deserializer, Serializer}
 
 /**
  * This tests ProtobufByteArrayInput

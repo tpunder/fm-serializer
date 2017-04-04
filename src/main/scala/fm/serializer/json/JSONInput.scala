@@ -15,9 +15,8 @@
  */
 package fm.serializer.json
 
-import java.io.Reader
 import java.lang.{StringBuilder => JavaStringBuilder}
-import fm.serializer.{CollectionInput, FieldInput, NestedInput, Input}
+import fm.serializer.{CollectionInput, FieldInput, Input}
 import fm.serializer.base64.Base64
 
 abstract class JSONInput(options: JSONOptions) extends Input {

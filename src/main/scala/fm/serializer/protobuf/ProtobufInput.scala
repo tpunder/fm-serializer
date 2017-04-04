@@ -16,7 +16,7 @@
 package fm.serializer.protobuf
 
 import scala.annotation.{switch, tailrec}
-import fm.serializer.{CollectionInput, FieldInput, NestedInput, Input}
+import fm.serializer.{CollectionInput, FieldInput, Input}
 
 abstract class ProtobufInput extends Input {
  

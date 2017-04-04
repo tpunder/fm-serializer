@@ -15,11 +15,10 @@
  */
 package fm.serializer.protobuf
 
-import scala.annotation.tailrec
-import java.io.OutputStream
-
 import fm.serializer.{FieldOutput, NestedOutput, Output}
 import fm.serializer.FMByteArrayOutputStream
+import scala.annotation.tailrec
+
 
 /**
  * Modified Protocol Buffers Output

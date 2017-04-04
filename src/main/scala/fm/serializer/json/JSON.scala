@@ -16,7 +16,7 @@
 package fm.serializer.json
 
 import fm.serializer.{Deserializer, Serializer}
-import java.io.{ByteArrayInputStream, InputStreamReader, OutputStreamWriter, Reader, StringReader}
+import java.io.Reader
 import java.nio.charset.StandardCharsets.UTF_8
 
 object JSON {

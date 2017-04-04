@@ -16,8 +16,7 @@
 package fm.serializer.protobuf
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import org.scalatest.{FunSuite, Matchers}
-import fm.serializer.{Deserializer, Primitive, Serializer}
+import fm.serializer.{Deserializer, Serializer}
 
 /**
  * This tests ProtobufInputStreamInput
