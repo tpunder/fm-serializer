@@ -15,13 +15,13 @@
  */
 package fm.serializer
 
-trait Mapper[@specialized A, B <: AnyRef] {
+trait Mapper[@specialized A, B] {
   def defaultValue: B
   def serialize(obj: B): A
   def deserialize(value: A): B
 }
 
-final class MappedSimpleSerializer[@specialized A, B <: AnyRef](orig: SimpleSerializer[A], mapper: Mapper[A,B]) extends SimpleSerializer[B] {
+final class MappedSimpleSerializer[@specialized A, B](orig: SimpleSerializer[A], mapper: Mapper[A,B]) extends SimpleSerializer[B] {
   final def serializeRaw(output: RawOutput, v: B): Unit = if (null != v) orig.serializeRaw(output, mapper.serialize(v))
   final def serializeNested(output: NestedOutput, v: B): Unit = if (null != v) orig.serializeNested(output, mapper.serialize(v))
   final def serializeField(output: FieldOutput, number: Int, name: String, v: B): Unit = if (null != v) orig.serializeField(output, number, name, mapper.serialize(v))

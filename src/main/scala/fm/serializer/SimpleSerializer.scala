@@ -19,11 +19,11 @@ package fm.serializer
  * A combined Serializer/Deserializer that works on the same type
  */
 trait SimpleSerializer[@specialized A] extends Serializer[A] with Deserializer[A] {
-  final def map[B <: AnyRef](ser: B => A, deser: A => B): MappedSimpleSerializer[A,B] = {
+  final def map[B](ser: B => A, deser: A => B): MappedSimpleSerializer[A,B] = {
     map[B](ser, deser, deser(defaultValue))
   }
   
-  final def map[B <: AnyRef](ser: B => A, deser: A => B, default: => B): MappedSimpleSerializer[A,B] = {
+  final def map[B](ser: B => A, deser: A => B, default: => B): MappedSimpleSerializer[A,B] = {
     new MappedSimpleSerializer[A,B](this, new Mapper[A,B]{
       final def defaultValue: B = default
       final def serialize(obj: B): A = ser(obj)
@@ -31,5 +31,5 @@ trait SimpleSerializer[@specialized A] extends Serializer[A] with Deserializer[A
     })
   }
   
-  final def map[B <: AnyRef](default: => B)(ser: B => A)(deser: A => B): MappedSimpleSerializer[A,B] = map(ser, deser, default)
+  final def map[B](default: => B)(ser: B => A)(deser: A => B): MappedSimpleSerializer[A,B] = map(ser, deser, default)
 }
