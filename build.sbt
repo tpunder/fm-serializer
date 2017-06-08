@@ -2,7 +2,7 @@ FMPublic
 
 name := "fm-serializer"
 
-version := "0.5.0-SNAPSHOT"
+version := "0.5.0"
 
 description := "Scala Macro Based Serialization"
 
@@ -42,7 +42,7 @@ libraryDependencies ++= {
 
 // SCALA Libraries
 libraryDependencies ++= Seq(
-  "com.frugalmechanic" %% "fm-common" % "0.8.0-SNAPSHOT"
+  "com.frugalmechanic" %% "fm-common" % "0.8.0"
 )
 
 // JAVA Libraries
