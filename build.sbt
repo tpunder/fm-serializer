@@ -30,11 +30,11 @@ scalacOptions := Seq(
 // We don't want log buffering when running ScalaTest
 logBuffered in Test := false
 
-libraryDependencies <+= (scalaVersion)("org.scala-lang" % "scala-reflect" % _)
+libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
 
 // Enable the Macro Paradise Compiler Plugin for Scala 2.10
-libraryDependencies <++= (scalaVersion){ sv =>
-  if (sv.startsWith("2.10")) Seq (
+libraryDependencies ++= {
+  if (scalaVersion.value.startsWith("2.10")) Seq (
     compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
     "org.scalamacros" %% "quasiquotes" % "2.1.0"
   ) else Nil
