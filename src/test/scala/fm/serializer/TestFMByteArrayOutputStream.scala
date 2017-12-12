@@ -33,7 +33,8 @@ final class TestFMByteArrayOutputStreamSmallBuffers extends TestFMByteArrayOutpu
   def MinUsefulBufferSize: Int = 8
   def CompactThresholdSize: Int = 8
   def SpliceThresholdSize: Int = 8
-  
+
+
   test("skipBytes - 0") {
     val os = newFMByteArrayOutputStream()
     os.skipBytes(0, 0)
@@ -202,8 +203,8 @@ final class TestFMByteArrayOutputStreamSmallBuffers extends TestFMByteArrayOutpu
   }
   
   test("skipBytes - Complex example") {
-    val os = newFMByteArrayOutputStream()
-
+//    val os = newFMByteArrayOutputStream()
+//
 //    os.write(1)
 //    os.write(2)
 //    

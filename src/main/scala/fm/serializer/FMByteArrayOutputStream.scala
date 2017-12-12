@@ -1003,8 +1003,7 @@ final class FMByteArrayOutputStream(
       val buf: Array[Byte] = buffers(i)
       val s: Int = starts(i)
       val len: Int = lengths(i)
-      val p: Boolean = isPooled(i)
-      
+
       assert(null != buf, s"buf is null for idx: $i")
       checkOffsetAndLength(s"BufferIndex: $i", buf, s, len)
       
