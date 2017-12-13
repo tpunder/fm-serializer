@@ -21,24 +21,23 @@ import scala.reflect.ClassTag
 /**
  * A specialized implementation for deserializing ImmutableArrays.
  */
-final class ImmutableArrayDeserializer[Elem : ClassTag, Col >: ImmutableArray[Elem]](implicit elemDeser: Deserializer[Elem]) extends Deserializer[Col] {
+final class ImmutableArrayDeserializer[Elem : ClassTag, Col >: ImmutableArray[Elem]](implicit elemDeser: Deserializer[Elem]) extends CollectionDeserializerBase[Col] {
   // Our default CanBuildFromDeserializer creates a new Builder and then calls result().  This is optimized
   // to just return ImmutableArray.empty without creating a new Builder.
   // TODO: figure out how to generalize this (perhaps using something like IndexedSeqFactory)
-  def defaultValue: ImmutableArray[Elem] = ImmutableArray.empty[Elem]
+  def defaultValue: Col = ImmutableArray.empty[Elem]
 
-  def deserializeRaw(input: RawInput): ImmutableArray[Elem] = input.readRawCollection{ readCollection }
-  def deserializeNested(input: NestedInput): ImmutableArray[Elem] = input.readNestedCollection{ readCollection }
+  protected def readCollection(input: CollectionInput): Col = {
+    if (!input.hasAnotherElement) return ImmutableArray.empty
 
-  private def readCollection(input: CollectionInput): ImmutableArray[Elem] = {
     // TODO: Add pooling of the ImmutableArray Builders?
-    var builder: ImmutableArrayBuilder[Elem] = null
+    val builder: ImmutableArrayBuilder[Elem] = ImmutableArray.newBuilder[Elem]
 
     while (input.hasAnotherElement) {
-      if (null == builder) builder = ImmutableArray.newBuilder[Elem]
+
       builder += elemDeser.deserializeNested(input)
     }
 
-    if (null == builder) ImmutableArray.empty[Elem] else builder.result()
+    builder.result()
   }
 }

@@ -25,14 +25,11 @@ object CanBuildFromDeserializer {
   }
 }
 
-final class CanBuildFromDeserializer[Elem,Col](implicit cbf: CanBuildFrom[_,Elem,Col], elemDeser: Deserializer[Elem]) extends Deserializer[Col] {  
+final class CanBuildFromDeserializer[Elem,Col](implicit cbf: CanBuildFrom[_,Elem,Col], elemDeser: Deserializer[Elem]) extends CollectionDeserializerBase[Col] {
   // TODO: make this a macro to use a Col.empty method (if one exists)
   def defaultValue: Col = cbf().result
-  
-  def deserializeRaw(input: RawInput): Col = input.readRawCollection{ readCollection }
-  def deserializeNested(input: NestedInput): Col = input.readNestedCollection{ readCollection }
-  
-  private def readCollection(input: CollectionInput): Col = {
+
+  protected def readCollection(input: CollectionInput): Col = {
     val builder: Builder[Elem,Col] = cbf()
     
     while (input.hasAnotherElement) {

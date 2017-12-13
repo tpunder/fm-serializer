@@ -20,24 +20,22 @@ import scala.collection.mutable
 /**
  * A specialized implementation for deserializing Vectors.
  */
-final class VectorDeserializer[Elem, Col >: Vector[Elem]](implicit elemDeser: Deserializer[Elem]) extends Deserializer[Col] {
+final class VectorDeserializer[Elem, Col >: Vector[Elem]](implicit elemDeser: Deserializer[Elem]) extends CollectionDeserializerBase[Col] {
   // Our default CanBuildFromDeserializer creates a new Builder and then calls result().  This is optimized
   // to just return Vector.empty without creating a new Builder.
   // TODO: figure out how to generalize this (perhaps using something like IndexedSeqFactory)
-  def defaultValue: Vector[Elem] = Vector.empty
+  def defaultValue: Col = Vector.empty
 
-  def deserializeRaw(input: RawInput): Vector[Elem] = input.readRawCollection{ readCollection }
-  def deserializeNested(input: NestedInput): Vector[Elem] = input.readNestedCollection{ readCollection }
+  protected def readCollection(input: CollectionInput): Col = {
+    if (!input.hasAnotherElement) return Vector.empty
 
-  private def readCollection(input: CollectionInput): Vector[Elem] = {
     // TODO: Add pooling of the Vector Builders?
-    var builder: mutable.Builder[Elem, Vector[Elem]] = null
+    val builder: mutable.Builder[Elem, Vector[Elem]] = Vector.newBuilder[Elem]
 
     while (input.hasAnotherElement) {
-      if (null == builder) builder = Vector.newBuilder[Elem]
       builder += elemDeser.deserializeNested(input)
     }
 
-    if (null == builder) Vector.empty else builder.result()
+    builder.result()
   }
 }

@@ -17,13 +17,10 @@ package fm.serializer
 
 import scala.collection.generic.Growable
 
-final class GrowableDeserializer[Elem,Col <: Growable[Elem]](newInstance: => Col)(implicit elemDeser: Deserializer[Elem]) extends Deserializer[Col] {
+final class GrowableDeserializer[Elem,Col <: Growable[Elem]](newInstance: => Col)(implicit elemDeser: Deserializer[Elem]) extends CollectionDeserializerBase[Col] {
   def defaultValue: Col = newInstance
-  
-  def deserializeRaw(input: RawInput): Col = input.readRawCollection{ readCollection }
-  def deserializeNested(input: NestedInput): Col = input.readNestedCollection{ readCollection }
-  
-  private def readCollection(input: CollectionInput): Col = {
+
+  protected def readCollection(input: CollectionInput): Col = {
     val col: Col = newInstance
     
     while (input.hasAnotherElement) {
