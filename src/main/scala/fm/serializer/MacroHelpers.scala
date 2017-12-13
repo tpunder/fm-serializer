@@ -611,7 +611,14 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     
     val tree: Tree = if (tpe <:< typeOf[Option[_]]) {
       val arg: Type = extractSingleTypeParamAsSeenFrom(tpe, typeOf[Option[_]])
-      q"fm.serializer.OptionDeserializer[$arg]()"
+
+      if (arg <:< typeOf[Boolean]) {
+        q"fm.serializer.BooleanOptionDeserializer"
+      } else if (arg <:< typeOf[Int]) {
+        q"fm.serializer.IntOptionDeserializer"
+      } else {
+        q"fm.serializer.OptionDeserializer[$arg]()"
+      }
     } else null
       
     Option(tree).map{ ctx.Expr[Deserializer[T]](_) }
@@ -776,20 +783,37 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     val proxyName: TermName = newTermName(ctx.fresh("colDeserializerProxy"))
     
     val isTrait: Boolean = tpe.typeSymbol.asClass.isTrait
-       
-    val tree: Tree = if (hasImplicit(appliedType(typeOf[CanBuildFrom[_,_,_]], List(WildcardType, elemTpe, tpe)))) {
-      q"new fm.serializer.CanBuildFromDeserializer[$elemTpe, $tpe]()"
-    } else if (tpe <:< typeOf[Growable[_]] && hasNoArgsConstructor(tpe)) {
-      q"new fm.serializer.GrowableDeserializer[$elemTpe, $tpe](new $tpe)"
-    } else if (tpe <:< typeOf[Vector[_]]) {
-      q"fm.serializer.CanBuildFromDeserializer.forVector[$elemTpe, $tpe]()"
-    } else if (tpe <:< typeOf[JavaCollection[_]]) {
-      // TODO: make this more robust
-      val newTpe: Tree = if (isTrait) q"new java.util.ArrayList[$elemTpe]()" else q"new $tpe" 
-      q"new fm.serializer.JavaCollectionDeserializer[$elemTpe, $tpe]($newTpe)"
-    } else {
-      null
-    }
+
+    val VectorTpe = appliedType(typeOf[Vector[_]], elemTpe)
+    val IndexedSeqTpe = appliedType(typeOf[scala.collection.IndexedSeq[_]], elemTpe)
+    val ImmutableIndexedSeqTpe = appliedType(typeOf[scala.collection.immutable.IndexedSeq[_]], elemTpe)
+
+    val tree: Tree =
+      if (tpe <:< VectorTpe) {
+        // Note: tpe =:= VectorTpe doesn't work
+        //println(s"DETECTED VECTOR - $tpe - new fm.serializer.VectorDeserializer[$elemTpe, $tpe]()")
+        q"new fm.serializer.VectorDeserializer[$elemTpe, $tpe]()"
+      } else if (tpe <:< typeOf[fm.common.ImmutableArray[_]]) {
+        //println(s"DETECTED IMMUTABLE_ARRAY - $tpe - new fm.serializer.VectorDeserializer[$elemTpe, $tpe]()")
+        q"new fm.serializer.ImmutableArrayDeserializer[$elemTpe, $tpe]()"
+      } else if ((tpe <:< IndexedSeqTpe && IndexedSeqTpe <:< tpe) || (tpe <:< ImmutableIndexedSeqTpe && ImmutableIndexedSeqTpe <:< tpe)) {
+        // Note: tpe =:= IndexedSeqTpe doesn't work and we want to make sure we only match scala.collection.IndexedSeq
+        //       and NOT sublcasses (since scala.collection.mutable.IndexedSeq is also a subtype but won't work with Vector)
+        //println(s"DETECTED INDEXED_SEQ - $tpe - new fm.serializer.VectorDeserializer[$elemTpe, $tpe]()")
+        // Default to the VectorDeserializer for any other IndexedSeq type
+        q"new fm.serializer.VectorDeserializer[$elemTpe, $tpe]()"
+      } else if (hasImplicit(appliedType(typeOf[CanBuildFrom[_,_,_]], List(WildcardType, elemTpe, tpe)))) {
+        //println(s"DETECTED CanBuildFrom - $tpe - new fm.serializer.CanBuildFromDeserializer[$elemTpe, $tpe]()")
+        q"new fm.serializer.CanBuildFromDeserializer[$elemTpe, $tpe]()"
+      } else if (tpe <:< typeOf[Growable[_]] && hasNoArgsConstructor(tpe)) {
+        q"new fm.serializer.GrowableDeserializer[$elemTpe, $tpe](new $tpe)"
+      } else if (tpe <:< typeOf[JavaCollection[_]]) {
+        // TODO: make this more robust
+        val newTpe: Tree = if (isTrait) q"new java.util.ArrayList[$elemTpe]()" else q"new $tpe"
+        q"new fm.serializer.JavaCollectionDeserializer[$elemTpe, $tpe]($newTpe)"
+      } else {
+        null
+      }
     
     if (tree == null) return null
     
