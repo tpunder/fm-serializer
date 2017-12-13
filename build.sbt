@@ -4,9 +4,9 @@ name := "fm-serializer"
 
 description := "Scala Macro Based Serialization"
 
-scalaVersion := "2.12.2"
+scalaVersion := "2.12.4"
 
-crossScalaVersions := Seq("2.11.11", "2.12.2")
+crossScalaVersions := Seq("2.11.11", "2.12.4")
 
 // Needed for the JavaBean tests to work
 compileOrder := CompileOrder.JavaThenScala
@@ -22,7 +22,8 @@ scalacOptions := Seq(
   "-Xelide-below", "OFF"
 ) ++ (if (scalaVersion.value.startsWith("2.12")) Seq(
   // Scala 2.12 specific compiler flags
-  "-opt:l:project"
+  "-opt:l:inline",
+  "-opt-inline-from:<sources>"
 ) else Nil)
 
 // We don't want log buffering when running ScalaTest
