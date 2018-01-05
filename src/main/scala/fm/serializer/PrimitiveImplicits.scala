@@ -30,7 +30,9 @@ trait PrimitiveImplicits {
   implicit val long:      LongPrimitive       = new LongPrimitive()
   implicit val char:      CharPrimitive       = new CharPrimitive()
 
-  implicit val immutableByteArray: ImmutableByteArrayPrimitive  = new ImmutableByteArrayPrimitive()
+  implicit val immutableByteArray: ImmutableByteArrayPrimitive    = new ImmutableByteArrayPrimitive()
+  implicit val immutableIntArray : ImmutableIntArrayDeserializer  = new ImmutableIntArrayDeserializer()
+  implicit val immutableLongArray: ImmutableLongArrayDeserializer = new ImmutableLongArrayDeserializer()
   
   import java.lang.{Boolean => JavaBoolean, Character => JavaChar, Float => JavaFloat, Double => JavaDouble, Integer => JavaInt, Long => JavaLong}
   
