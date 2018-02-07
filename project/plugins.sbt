@@ -1,1 +1,1 @@
-addSbtPlugin("com.frugalmechanic" % "fm-sbt-common" % "0.18.0")
+addSbtPlugin("com.frugalmechanic" % "fm-sbt-common" % "0.19.0")
