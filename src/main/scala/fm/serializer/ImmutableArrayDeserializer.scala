@@ -59,7 +59,7 @@ final class ImmutableLongArrayDeserializer extends CollectionDeserializerBase[Im
   protected def readCollection(input: CollectionInput): ImmutableArray[Long] = {
     if (!input.hasAnotherElement) return ImmutableArray.empty[Long]
     val builder: ImmutableArrayBuilder[Long] = new ImmutableArrayBuilder[Long](0)
-    while (input.hasAnotherElement) builder += Primitive.int.deserializeNested(input)
+    while (input.hasAnotherElement) builder += Primitive.long.deserializeNested(input)
     builder.result()
   }
 }
