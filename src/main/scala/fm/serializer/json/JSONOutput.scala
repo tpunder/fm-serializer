@@ -93,17 +93,28 @@ final class JSONOutput(outputNulls: Boolean = true, outputFalse: Boolean = true,
     val len: Int = value.length
     var i: Int = 0
     
-    while(i < len) {
+    while (i < len) {
       val start: Int = i
       
       // While there are characters that don't need special handling
-      while(i < len && isSimpleChar(value.charAt(i))) i += 1
+      while (i < len && isSimpleChar(value.charAt(i))) i += 1
       
       // Bulk write them
       if (i > start) out.write(value, start, i - start)
       
       if (i < len) {
-        appendSpecialChar(value.charAt(i))
+        val ch: Char = value.charAt(i)
+
+        // Need to handle Supplementary characters: http://www.oracle.com/us/technologies/java/supplementary-142654.html
+        val codePoint: Int = if (Character.isSurrogate(ch) && i+1 < len) {
+          i += 1 // Need to increment i to account for the second char
+          Character.toCodePoint(ch, value.charAt(i)) // Note: i is increment and is reading the second char
+        } else {
+          ch.toInt
+        }
+
+        appendSpecialChar(codePoint)
+
         i += 1
       }
       
@@ -111,8 +122,10 @@ final class JSONOutput(outputNulls: Boolean = true, outputFalse: Boolean = true,
     
     out.write('"')
   }
-  
-  private def appendSpecialChar(ch: Char): Unit = ch match {
+
+  // ch is the codePoint which takes in Supplementary Characters:
+  // http://www.oracle.com/us/technologies/java/supplementary-142654.html
+  private def appendSpecialChar(ch: Int): Unit = ch match {
     case '"'  => out.writeASCII("\\\"")
     case '\\' => out.writeASCII("\\\\")
     case '/'  => out.writeASCII("\\/")
@@ -137,7 +150,7 @@ final class JSONOutput(outputNulls: Boolean = true, outputFalse: Boolean = true,
           out.writeASCII(hex)
         } else {
           // Normal Character
-          out.append(ch)
+          out.appendCodePoint(ch)
         }
     }
   

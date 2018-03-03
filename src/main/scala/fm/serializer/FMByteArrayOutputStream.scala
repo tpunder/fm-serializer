@@ -25,10 +25,7 @@ object FMByteArrayOutputStream {
   val DefaultMinUsefulBufferSize: Int = 8
   val DefaultCompactThresholdSize: Int = 8
   val DefaultSpliceThresholdSize: Int = 8
-  
-  // We are only supporting up to 3-byte UTF-8 characters
-  val MAX_UTF8_CHAR_BYTES: Int = 3
-  
+
   private final class Pool(bufferSize: Int) {
     private[this] val pool: Array[Array[Byte]] = new Array(32)
     private[this] var count: Int = 0
@@ -86,8 +83,9 @@ final class FMByteArrayOutputStream(
   
   require(MinUsefulBufferSize <= BufferSize, s"MinUsefulBufferSize ($MinUsefulBufferSize) should be less than or equal to BufferSize ($BufferSize)")
   require(CompactThresholdSize <= BufferSize, s"CompactThresholdSize ($CompactThresholdSize) should be less than or equal to BufferSize ($BufferSize)")
-  
-  private[this] val MAX_UTF8_CHAR_BYTES: Int = 3
+
+  // UTF-8 has a max of 4 bytes
+  private[this] val MAX_UTF8_CHAR_BYTES: Int = 4
   
   private[this] val pool = new FMByteArrayOutputStream.Pool(BufferSize)
   
@@ -200,11 +198,17 @@ final class FMByteArrayOutputStream(
     if (ch <= 0x007F) return 1
     if (ch <= 0x07FF) return 2
     if (ch <= 0xFFFF) return 3
-    0
+    4
     //else if (ch <= 0x10FFFF) 4
     //else throw new AssertionError("Invalid UTF-8 Character: "+ch)
   }
-  
+
+  def appendCodePoint(codePoint: Int): this.type = {
+    ensureAvailable(sizeOfUTF8Char(codePoint))
+    appendCharNoBoundsCheck(codePoint)
+    this
+  }
+
   /** Appendable Implementation */
   def append(ch: Char): this.type = {
     ensureAvailable(sizeOfUTF8Char(ch))
@@ -302,8 +306,11 @@ final class FMByteArrayOutputStream(
   /** Returns the number of bytes written */
   def writeUTF8Bytes(str: String, start: Int, len: Int): Int = {
     if (len == 0) return 0
-    
-    val maxSize: Int = MAX_UTF8_CHAR_BYTES * len
+
+    // Note: This is MAX_UTF8_CHAR_BYTES - 1 because each individual Java Character will
+    //       expand to a max of 3 bytes.  Only a set of supplementary characters will
+    //       take up 4 bytes but they are already counted as 2 separate characters so we are okay.
+    val maxSize: Int = (MAX_UTF8_CHAR_BYTES - 1) * len
     
     if (maxSize < available) return writeUTF8BytesFast(str, start, len)
     writeUTF8BytesSlow(str, start, len)
@@ -331,7 +338,17 @@ final class FMByteArrayOutputStream(
     
     // If the fast path terminated check for any remaining chars (which could be a mix of ASCII and non-ASCII)
     while (i < end) {
-      off += appendCharNoBoundsCheck(str.charAt(i), arr, off)
+      val ch: Char = str.charAt(i)
+
+      // Need to handle Supplementary characters: http://www.oracle.com/us/technologies/java/supplementary-142654.html
+      val codePoint: Int = if (Character.isSurrogate(ch) && i+1 < end) {
+        i += 1 // Need to increment i to account for the second char
+        Character.toCodePoint(ch, str.charAt(i)) // Note: i is increment and is reading the second char
+      } else {
+        ch.toInt
+      }
+
+      off += appendCharNoBoundsCheck(codePoint, arr, off)
       i += 1
     }
     
@@ -353,7 +370,8 @@ final class FMByteArrayOutputStream(
       val startingOffset = arrOff
       var arrLen: Int = _length
       var arr: Array[Byte] = _array
-      
+
+      // Fast path for ASCII
       while (i < end && arrOff < arrLen && ch <= 0x7F) {
         arr(arrOff) = ch.toByte
         arrOff += 1
@@ -370,9 +388,21 @@ final class FMByteArrayOutputStream(
         arrOff = _offset
         arrLen = _length
         arr = _array
-        val innerStartingOffset: Int = arrOff        
+        val innerStartingOffset: Int = arrOff
+
         while (i < end && arrOff < arrLen - (MAX_UTF8_CHAR_BYTES - 1)) {
-          arrOff += appendCharNoBoundsCheck(str.charAt(i), arr, arrOff)
+          ch = str.charAt(i)
+
+          // Need to handle Supplementary characters: http://www.oracle.com/us/technologies/java/supplementary-142654.html
+          val codePoint: Int = if (Character.isSurrogate(ch) && i+1 < end) {
+            i += 1 // Need to increment i to account for the second char
+            Character.toCodePoint(ch, str.charAt(i)) // Note: i is increment and is reading the second char
+          } else {
+            ch.toInt
+          }
+
+          arrOff += appendCharNoBoundsCheck(codePoint, arr, arrOff)
+
           i += 1
         }
         
@@ -394,24 +424,28 @@ final class FMByteArrayOutputStream(
     _offset = off + bytesWritten
     bytesWritten
   }
-  
-  private def appendCharNoBoundsCheck(ch: Int, arr: Array[Byte], off: Int): Int = {    
-    val bytesWritten: Int = 
-      if (ch <= 0x007F) {
-        arr(off) = ch.toByte
-        1
-      } else if (ch <= 0x07FF) {
-        arr(off)   = (0xC0 | ((ch >> 6) & 0x1F)).toByte
-        arr(off+1) = (0x80 | ((ch     ) & 0x3F)).toByte
-        2
-      } else if (ch <= 0xFFFF) {
-        arr(off)   = (0xE0 | ((ch >> 12) & 0x0F)).toByte
-        arr(off+1) = (0x80 | ((ch >>  6) & 0x3F)).toByte
-        arr(off+2) = (0x80 | ((ch      ) & 0x3F)).toByte
-        3
-      } else 0
-    
-    bytesWritten
+
+  // Note: ch should be the codepoint (which means supplementary chars must be collapsed before calling this)
+  private def appendCharNoBoundsCheck(ch: Int, arr: Array[Byte], off: Int): Int = {
+    if (ch <= 0x007F) {
+      arr(off) = ch.toByte
+      1
+    } else if (ch <= 0x07FF) {
+      arr(off)   = (0xC0 | ((ch >> 6) & 0x1F)).toByte
+      arr(off+1) = (0x80 | ((ch     ) & 0x3F)).toByte
+      2
+    } else if (ch <= 0xFFFF) {
+      arr(off)   = (0xE0 | ((ch >> 12) & 0x0F)).toByte
+      arr(off+1) = (0x80 | ((ch >>  6) & 0x3F)).toByte
+      arr(off+2) = (0x80 | ((ch      ) & 0x3F)).toByte
+      3
+    } else {
+      arr(off)   = (0xF0 | ((ch >> 18) & 0x07)).toByte
+      arr(off+1) = (0x80 | ((ch >> 12) & 0x3F)).toByte
+      arr(off+2) = (0x80 | ((ch >>  6) & 0x3F)).toByte
+      arr(off+3) = (0x80 | ((ch      ) & 0x3F)).toByte
+      4
+    }
   }
    
   def reset(): Unit = {

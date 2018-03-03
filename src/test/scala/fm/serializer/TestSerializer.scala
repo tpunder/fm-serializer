@@ -29,6 +29,9 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
   // Does the serialization method support serializing raw collections
   def supportsRawCollections: Boolean = true
 
+  private val RepeatFactor: Int = 1024
+  private val LongRepeatFactor: Int = 8190
+
   def serialize[T](v: T)(implicit ser: Serializer[T]): BYTES
   def deserialize[T](bytes: BYTES)(implicit deser: Deserializer[T]): T
   
@@ -39,7 +42,7 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
   case class PersonNoAge(name: String)
   case class Person(name: String, age: Int = 18, blah: String = "blah")
   case class LinkedPerson(person: Person, next: LinkedPerson)
-  
+
   test("Person") {
     val p: Person = Person("Bob", 123)
     val bytes: BYTES = serialize(p)
@@ -169,7 +172,7 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     //
     emptyString: String = "",
     nullString: String = null,
-    specialChars: String = "Hello \r\t\n \\ / \" \b\f oneByte: \u0024 twoByte: \u00A2 threeByte: \u20AC   World!",
+    specialChars: String = "Hello \r\t\n \\ / \" \b\f oneByte: \u0024 twoByte: \u00A2 threeByte: \u20AC fourByteSupplementary: \uD83D\uDCA5  World!",
     minInt: Int = Int.MinValue,
     maxInt: Int = Int.MaxValue,
     minLong: Long = Long.MinValue,
@@ -182,9 +185,9 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     javaIntNull: Integer = null,
     // This is 120 chars long.  We should end up prefixing with a 2-byte varint that is padded since the max this string could take up is 120 * 3 (up to 3 bytes per char)
     stringPrefixCheck: String = "012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789",
-    longString: String = "abcdefghijklmnopqrstuvwxyz"*8190, // This should blow past the size of any output buffer to trigger slow string write paths
-    multiByteLongString: String = "Hello \r\t\n \\ / \" \b\f oneByte: \u0024 twoByte: \u00A2 threeByte: \u20AC   World!"*1024,
-    anothermultiByteLongString: String = "\u0024\u00A2\u20AC"*8190,
+    longString: String = "abcdefghijklmnopqrstuvwxyz"*LongRepeatFactor, // This should blow past the size of any output buffer to trigger slow string write paths
+    multiByteLongString: String = "Hello \r\t\n \\ / \" \b\f oneByte: \u0024 twoByte: \u00A2 threeByte: \u20AC fourByteSupplementary: \uD83D\uDCA5  World!"*RepeatFactor,
+    anothermultiByteLongString: String = "\u0024\u00A2\u20AC"*LongRepeatFactor,
     baz: Baz = Baz()
     // Don't add more to this class (it already has 22 items) until we stop supporting Scala 2.10.x
     // Don't add more to this class (it already has 22 items) until we stop supporting Scala 2.10.x
@@ -210,7 +213,21 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     localDate: LocalDate = LocalDate.now,
     localDateNull: LocalDate = null,
     bsonTypes: BsonTypes = BsonTypes(),
-    fmCommonTypes: FMCommonTypes = FMCommonTypes()
+    fmCommonTypes: FMCommonTypes = FMCommonTypes(),
+    //supplementaryCharacters: SupplementaryCharacters = SupplementaryCharacters()
+  )
+
+  // Supplementary Characters as represented in Java as 2 characters but need
+  // to be converted to a single UTF-8 character (1-4 bytes) when we serialize
+  // http://www.oracle.com/us/technologies/java/supplementary-142654.html
+  case class SupplementaryCharacters(
+    single: String = "\uD83D\uDCA5", // "💥"
+    mixed: String = "foo\uD83D\uDCA5bar", // "foo💥bar"
+    repeatedMixed: String = "foo\uD83D\uDCA5bar" * 10,
+    emojis: String = new String(Array(0x1F600, 0x1F63A, 0x1F9D7, 0x1F1FA, 0x1F1F8).flatMap{ Character.toChars(_) }), // "😀😺🧗🇺🇸"
+    repeatedEmojis: String = new String(Array(0x1F600, 0x1F63A, 0x1F9D7, 0x1F1FA, 0x1F1F8).flatMap{ Character.toChars(_) }) * RepeatFactor,
+    moreMixed: String = "Hello \r\t\n \\ / \" \b\f oneByte: \u0024 twoByte: \u00A2 threeByte: \u20AC fourByteSupplementary: \uD83D\uDCA5  World!",
+    repeatedMoreMixed: String = "Hello \r\t\n \\ / \" \b\f oneByte: \u0024 twoByte: \u00A2 threeByte: \u20AC fourByteSupplementary: \uD83D\uDCA5  World!" * RepeatFactor
   )
 
   case class BsonTypes(
@@ -237,7 +254,7 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     ipNone: Option[IP] = None,
     ipSome: Option[IP] = Some(IP("192.168.0.1")),
     bytes: ImmutableArray[Byte] = ImmutableArray.wrap("Hello World!".getBytes(UTF_8)),
-    moreBytes: ImmutableArray[Byte] = ImmutableArray.wrap(("Hello \r\t\n \\ / \" \b\f oneByte: \u0024 twoByte: \u00A2 threeByte: \u20AC   World!"*1024).getBytes(UTF_8)),
+    moreBytes: ImmutableArray[Byte] = ImmutableArray.wrap(("Hello \r\t\n \\ / \" \b\f oneByte: \u0024 twoByte: \u00A2 threeByte: \u20AC fourByteSupplementary: \uD83D\uDCA5  World!"*RepeatFactor).getBytes(UTF_8)),
     bytesNull: ImmutableArray[Byte] = null,
     immutableArrayInts: ImmutableArray[Int] = ImmutableArray(1,2,3,4,Int.MinValue,Int.MaxValue),
     immutableArrayLongs: ImmutableArray[Long] = ImmutableArray(1,2,3,4,Int.MinValue,Int.MaxValue,Long.MinValue,Long.MaxValue),
