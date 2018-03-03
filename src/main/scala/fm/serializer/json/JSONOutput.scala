@@ -108,7 +108,7 @@ final class JSONOutput(outputNulls: Boolean = true, outputFalse: Boolean = true,
         // Need to handle Supplementary characters: http://www.oracle.com/us/technologies/java/supplementary-142654.html
         val codePoint: Int = if (Character.isSurrogate(ch) && i+1 < len) {
           i += 1 // Need to increment i to account for the second char
-          Character.toCodePoint(ch, value.charAt(i)) // Note: i is increment and is reading the second char
+          Character.toCodePoint(ch, value.charAt(i)) // Note: i is incremented and is now reading the second char
         } else {
           ch.toInt
         }
@@ -123,7 +123,7 @@ final class JSONOutput(outputNulls: Boolean = true, outputFalse: Boolean = true,
     out.write('"')
   }
 
-  // ch is the codePoint which takes in Supplementary Characters:
+  // Note: ch should be the codepoint (which means supplementary chars must be collapsed before calling this)
   // http://www.oracle.com/us/technologies/java/supplementary-142654.html
   private def appendSpecialChar(ch: Int): Unit = ch match {
     case '"'  => out.writeASCII("\\\"")

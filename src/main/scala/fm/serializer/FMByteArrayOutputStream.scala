@@ -343,7 +343,7 @@ final class FMByteArrayOutputStream(
       // Need to handle Supplementary characters: http://www.oracle.com/us/technologies/java/supplementary-142654.html
       val codePoint: Int = if (Character.isSurrogate(ch) && i+1 < end) {
         i += 1 // Need to increment i to account for the second char
-        Character.toCodePoint(ch, str.charAt(i)) // Note: i is increment and is reading the second char
+        Character.toCodePoint(ch, str.charAt(i)) // Note: i is incremented and is now reading the second char
       } else {
         ch.toInt
       }
@@ -396,7 +396,7 @@ final class FMByteArrayOutputStream(
           // Need to handle Supplementary characters: http://www.oracle.com/us/technologies/java/supplementary-142654.html
           val codePoint: Int = if (Character.isSurrogate(ch) && i+1 < end) {
             i += 1 // Need to increment i to account for the second char
-            Character.toCodePoint(ch, str.charAt(i)) // Note: i is increment and is reading the second char
+            Character.toCodePoint(ch, str.charAt(i)) // Note: i is incremented and is now reading the second char
           } else {
             ch.toInt
           }
