@@ -214,7 +214,7 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     localDateNull: LocalDate = null,
     bsonTypes: BsonTypes = BsonTypes(),
     fmCommonTypes: FMCommonTypes = FMCommonTypes(),
-    //supplementaryCharacters: SupplementaryCharacters = SupplementaryCharacters()
+    supplementaryCharacters: SupplementaryCharacters = SupplementaryCharacters()
   )
 
   // Supplementary Characters as represented in Java as 2 characters but need
