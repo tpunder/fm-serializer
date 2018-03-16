@@ -41,7 +41,7 @@ libraryDependencies ++= {
 
 // SCALA Libraries
 libraryDependencies ++= Seq(
-  "com.frugalmechanic" %% "fm-common" % "0.15.0"
+  "com.frugalmechanic" %% "fm-common" % "0.16.0"
 )
 
 // JAVA Libraries
