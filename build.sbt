@@ -31,14 +31,6 @@ logBuffered in Test := false
 
 libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
 
-// Enable the Macro Paradise Compiler Plugin for Scala 2.10
-libraryDependencies ++= {
-  if (scalaVersion.value.startsWith("2.10")) Seq (
-    compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
-    "org.scalamacros" %% "quasiquotes" % "2.1.0"
-  ) else Nil
-}
-
 // SCALA Libraries
 libraryDependencies ++= Seq(
   "com.frugalmechanic" %% "fm-common" % "0.16.0"
