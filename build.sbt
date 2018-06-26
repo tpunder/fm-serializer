@@ -38,6 +38,7 @@ libraryDependencies ++= Seq(
 
 // JAVA Libraries
 libraryDependencies ++= Seq(
+  "javax.xml.bind" % "jaxb-api" % "2.3.0", // JAXB (API Only) - Needed for Java 9+ since it is no longer automatically available
   "joda-time" % "joda-time" % "2.9.1",
   "org.joda" % "joda-convert" % "1.8", // Required by joda-time when using Scala
   "org.mongodb" % "bson" % "3.3.0"
