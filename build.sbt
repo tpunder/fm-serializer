@@ -4,9 +4,9 @@ name := "fm-serializer"
 
 description := "Scala Macro Based Serialization"
 
-scalaVersion := "2.12.6"
+scalaVersion := "2.12.7"
 
-crossScalaVersions := Seq("2.11.11", "2.12.6")
+crossScalaVersions := Seq("2.11.11", "2.12.7")
 
 // Needed for the JavaBean tests to work
 compileOrder := CompileOrder.JavaThenScala
@@ -33,15 +33,18 @@ libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
 
 // SCALA Libraries
 libraryDependencies ++= Seq(
-  "com.frugalmechanic" %% "fm-common" % "0.22.0"
+  "com.frugalmechanic" %% "fm-common" % "0.26.0"
 )
 
 // JAVA Libraries
 libraryDependencies ++= Seq(
-  "javax.xml.bind" % "jaxb-api" % "2.3.0", // JAXB (API Only) - Needed for Java 9+ since it is no longer automatically available
+  "com.sun.xml.bind" % "jaxb-core" % "2.3.0.1", // JAXB - Needed for Java 9+ since it is no longer automatically available
+  "com.sun.xml.bind" % "jaxb-impl" % "2.3.0.1", // JAXB - Needed for Java 9+ since it is no longer automatically available
+  "javax.xml.bind" % "jaxb-api" % "2.3.0", // JAXB - Needed for Java 9+ since it is no longer automatically available
+  "javax.activation" % "javax.activation-api" % "1.2.0", // JAXB - Needed for Java 9+ since it is no longer automatically available
   "joda-time" % "joda-time" % "2.9.1",
   "org.joda" % "joda-convert" % "1.8", // Required by joda-time when using Scala
   "org.mongodb" % "bson" % "3.3.0"
 )
 
-libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.0" % "test"
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.5" % "test"
