@@ -39,8 +39,8 @@ libraryDependencies ++= Seq(
 // JAVA Libraries
 libraryDependencies ++= Seq(
   "com.sun.xml.bind" % "jaxb-core" % "2.3.0.1", // JAXB - Needed for Java 9+ since it is no longer automatically available
-  "com.sun.xml.bind" % "jaxb-impl" % "2.3.0.1", // JAXB - Needed for Java 9+ since it is no longer automatically available
-  "javax.xml.bind" % "jaxb-api" % "2.3.0", // JAXB - Needed for Java 9+ since it is no longer automatically available
+  "com.sun.xml.bind" % "jaxb-impl" % "2.3.1", // JAXB - Needed for Java 9+ since it is no longer automatically available
+  "javax.xml.bind" % "jaxb-api" % "2.3.1", // JAXB - Needed for Java 9+ since it is no longer automatically available
   "javax.activation" % "javax.activation-api" % "1.2.0", // JAXB - Needed for Java 9+ since it is no longer automatically available
   "joda-time" % "joda-time" % "2.9.1",
   "org.joda" % "joda-convert" % "1.8", // Required by joda-time when using Scala
