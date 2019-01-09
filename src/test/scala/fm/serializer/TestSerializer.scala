@@ -547,6 +547,29 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     p2 should equal (renamed)
   }
 
+
+  //===============================================================================================
+  // New Fields
+  //===============================================================================================
+
+
+  case class NewFieldOriginal(foo: String)
+  case class NewFieldUpdated(@Field(2) bar: Option[Int] = None, @Field(1) foo: String)
+
+  test("Adding a new field w/default value") {
+    val orig: NewFieldOriginal = NewFieldOriginal("Hello World")
+    val updated: NewFieldUpdated = NewFieldUpdated(foo = "Hello World")
+
+    val bytes: BYTES = serialize(orig)
+
+    val p2: NewFieldUpdated = deserialize[NewFieldUpdated](bytes)
+
+    p2 should equal (updated)
+  }
+
+
+
+
   //===============================================================================================
   // AnyVal Classes
   //===============================================================================================
