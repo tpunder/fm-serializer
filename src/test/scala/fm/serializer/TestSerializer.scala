@@ -403,6 +403,7 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     foo.setIgnoredField1("ignored1")
     foo.setIgnoredField2("ignored2")
     foo.setIgnoredField4("ignored4")
+    foo.setShadowedInterfaceMethod("not transient")
     
     val bytes: BYTES = serialize(foo)
     val foo2: FooJavaBean = deserialize[FooJavaBean](bytes)
@@ -419,6 +420,9 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
     
     // This will fail until proper java transient field detection is in place
     foo2.getIgnoredField4 should equal (null)
+
+    foo2.getShadowedInterfaceMethod should equal("not transient")
+
   }
   
   //===============================================================================================

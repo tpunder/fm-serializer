@@ -19,7 +19,9 @@ public class FooJavaBean implements FooInterface {
   @XmlTransient protected String ignoredField2;
 //  @XmlTransient public String ignoredField3;
   protected transient String ignoredField4;
-  
+
+  protected String shadowedInterfaceMethod;
+
   public String getName() {
     return name;
   }
@@ -107,4 +109,14 @@ public class FooJavaBean implements FooInterface {
   public void setIgnoredField4(String value) {
     this.ignoredField4 = value;
   }
+
+  // Marked as @XmlTransient in the interface, make sure this can be set in the concrete class still
+  public String getShadowedInterfaceMethod() {
+    return shadowedInterfaceMethod;
+  }
+
+  public void setShadowedInterfaceMethod(String value) {
+    this.shadowedInterfaceMethod = value;
+  }
+
 }
