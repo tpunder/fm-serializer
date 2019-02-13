@@ -91,10 +91,10 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
   //===============================================================================================
   // Option Testing
   //===============================================================================================
-  case class OptionalFoo(string: Option[String], int: Option[Int])
+  case class OptionalFoo(string: Option[String], bool: Option[Boolean], char: Option[Char], int: Option[Int], long: Option[Long])
   
   test("Option Handling - None") {
-    val foo: OptionalFoo = OptionalFoo(None, None)
+    val foo: OptionalFoo = OptionalFoo(None, None, None, None, None)
     val bytes: BYTES = serialize(foo)
     val foo2: OptionalFoo = deserialize[OptionalFoo](bytes)
     
@@ -102,14 +102,28 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
   }
   
   test("Option Handling - Some") {
-    val foo: OptionalFoo = OptionalFoo(Some("Hello World!"), Some(123))
+    val foo: OptionalFoo = OptionalFoo(Some("Hello World!"), Some(true), Some('A'), Some(123), Some(456L))
     val bytes: BYTES = serialize(foo)
     val foo2: OptionalFoo = deserialize[OptionalFoo](bytes)
     
     foo should equal (foo2)
   }
+
+  test("Option Handling - Some - Cached Values") {
+    import fm.common.Implicits._
+
+    val foo: OptionalFoo = OptionalFoo(Some("Hello World!"), Some.cached(true), Some.cached('A'), Some.cached(1), Some.cached(2L))
+    val bytes: BYTES = serialize(foo)
+    val foo2: OptionalFoo = deserialize[OptionalFoo](bytes)
+
+    foo should equal (foo2)
+    foo.bool should be theSameInstanceAs foo2.bool
+    foo.char should be theSameInstanceAs foo2.char
+    foo.int should be theSameInstanceAs foo2.int
+    foo.long should be theSameInstanceAs foo2.long
+  }
   
-  case class OptionalFooWithDefaults(string: Option[String] = Some("default"), int: Option[Int] = Some(123456789))
+  case class OptionalFooWithDefaults(string: Option[String] = Some("default"), bool: Option[Boolean] = Some(false), int: Option[Int] = Some(123456789), long: Option[Long] = Some(987654321L))
   
   test("Option Handling with Defaults - None") {
     val foo: OptionalFooWithDefaults = OptionalFooWithDefaults(None, None)
@@ -120,7 +134,7 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers {
   }
   
   test("Option Handling with Defaults - Some") {
-    val foo: OptionalFooWithDefaults = OptionalFooWithDefaults(Some("Hello World!"), Some(123))
+    val foo: OptionalFooWithDefaults = OptionalFooWithDefaults(Some("Hello World!"), Some(true), Some(123), Some(456L))
     val bytes: BYTES = serialize(foo)
     val foo2: OptionalFooWithDefaults = deserialize[OptionalFooWithDefaults](bytes)
     

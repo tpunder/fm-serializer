@@ -614,8 +614,12 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
 
       if (arg <:< typeOf[Boolean]) {
         q"fm.serializer.BooleanOptionDeserializer"
+      } else if (arg <:< typeOf[Char]) {
+        q"fm.serializer.CharOptionDeserializer"
       } else if (arg <:< typeOf[Int]) {
         q"fm.serializer.IntOptionDeserializer"
+      } else if (arg <:< typeOf[Long]) {
+        q"fm.serializer.LongOptionDeserializer"
       } else {
         q"fm.serializer.OptionDeserializer[$arg]()"
       }
