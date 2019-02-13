@@ -23,7 +23,7 @@ final class JSONReaderInput(reader: Reader, options: JSONOptions) extends JSONIn
   
   /** Return peek and advance to the next character */
   protected def next: Char = {
-    require(peek != -1, "EOF")
+    if (peek == -1) throw new IllegalArgumentException("EOF")
     val ch: Char = peek.toChar
     peek = reader.read()
     ch

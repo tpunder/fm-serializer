@@ -61,11 +61,11 @@ abstract class JSONInput(options: JSONOptions) extends Input {
   /** Read contiguous chars that make up non-string types (e.g. 123.456, false, true, null) */
   private def readContiguousChars(): String = {
     skipWhitespace()
-    require(isValidStartOfContiguousChars(), s"Invalid Start of Contiguous Chars (e.g. for a number, boolean, or null) ${peek.toChar}")
+    if (!isValidStartOfContiguousChars()) throw new IllegalArgumentException(s"Invalid Start of Contiguous Chars (e.g. for a number, boolean, or null) ${peek.toChar}")
     val sb: JavaStringBuilder = new JavaStringBuilder()
     while (!isEndOfContiguousChars()) sb.append(next)
     val res: String = sb.toString
-    require(res.length > 0, "Expected a non-empty string")
+    if (res.length == 0) throw new IllegalArgumentException("Expected a non-empty string")
     res
   }
   
@@ -93,14 +93,14 @@ abstract class JSONInput(options: JSONOptions) extends Input {
   def expectNextChar(ch: Int): Unit = {
     skipWhitespace()
     val n: Char = next
-    require(n == ch, s"Expected next char to be: ${ch.toChar} but got $n")
+    if (n != ch) throw new IllegalArgumentException(s"Expected next char to be: ${ch.toChar} but got $n")
   }
   
   def nextValueIsNull: Boolean = {
     skipWhitespace()
     if (peek == 'n') {
       val res: String = readContiguousChars()
-      require(res == "null", s"Expected to read null but got: $res")
+      if (res != "null") throw new IllegalArgumentException(s"Expected to read null but got: $res")
       true
     } else {
       false
@@ -141,7 +141,7 @@ abstract class JSONInput(options: JSONOptions) extends Input {
     skipWhitespace()
     
     // Followed by a colon
-    require(next == ':', "Expected : character after the field name")
+    if (next != ':') throw new IllegalArgumentException("Expected : character after the field name")
     
     name
   }
@@ -201,7 +201,7 @@ abstract class JSONInput(options: JSONOptions) extends Input {
       else {
         skipWhitespace()
         if (peek == ',') next // Skip over the comma
-        else require(peek == closingChar, s"Expected either a comma or a $closingChar but got: ${peek.toChar}")
+        else if (peek != closingChar) throw new IllegalArgumentException(s"Expected either a comma or a $closingChar but got: ${peek.toChar}")
       }
     }
   }

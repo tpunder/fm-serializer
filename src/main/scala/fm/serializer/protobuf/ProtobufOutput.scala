@@ -57,7 +57,7 @@ final class ProtobufOutput() extends Output {
   final def writeRawDouble(value: Double): Unit = writeDoubleNoTag(value)
   
   final def writeRawString(value: String): Unit = {
-    require(null != value, "Can't write a null rawString value")
+    if (null == value) throw new IllegalArgumentException("Can't write a null rawString value")
     
     // No Length Prefix
     os.writeUTF8Bytes(value)
@@ -83,13 +83,13 @@ final class ProtobufOutput() extends Output {
   
   // Objects
   final def writeRawObject[T](obj: T)(f: (FieldOutput, T) => Unit): Unit = {
-    require(null != obj, "Cannot write raw null object")
+    if (null == obj) throw new IllegalArgumentException("Cannot write raw null object")
     f(this, obj)
   }
   
   // Colletions
   final def writeRawCollection[T](col: T)(f: (NestedOutput, T) => Unit): Unit = {
-    require(null != col, "Cannot write a raw null collection")
+    if (null == col) throw new IllegalArgumentException("Cannot write a raw null collection")
     f(this, col)
   }
   
@@ -124,7 +124,7 @@ final class ProtobufOutput() extends Output {
   
   // Objects
   final def writeNestedObject[T](obj: T)(f: (FieldOutput, T) => Unit): Unit = {
-    require(null != obj, "Cannot write a null nested object")
+    if (null == obj) throw new IllegalArgumentException("Cannot write a null nested object")
     //if (null == obj) return writeLengthDelimitedNull()
     //else if (EncodeMessagesAsGroups) writeNestedGroupEncodedMessage(obj)(f)
     //else writeLengthDelimited(obj)(f)

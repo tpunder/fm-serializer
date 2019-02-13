@@ -49,7 +49,7 @@ final class ProtobufOutputStreamOutput(private var os: OutputStream) extends Out
   final def writeRawDouble(value: Double): Unit = writeDoubleNoTag(value)
   
   final def writeRawString(value: String): Unit = {
-    require(null != value, "Can't write a null rawString value")
+    if (null == value) throw new IllegalArgumentException("Can't write a null rawString value")
     
     // No Length Prefix
     val bytes: Array[Byte] = value.getBytes("UTF-8")
@@ -76,13 +76,13 @@ final class ProtobufOutputStreamOutput(private var os: OutputStream) extends Out
   
   // Objects
   final def writeRawObject[T](obj: T)(f: (FieldOutput, T) => Unit): Unit = {
-    require(null != obj, "Cannot write raw null object")
+    if (null == obj) throw new IllegalArgumentException("Cannot write raw null object")
     f(this, obj)
   }
   
   // Colletions
   final def writeRawCollection[T](col: T)(f: (NestedOutput, T) => Unit): Unit = {
-    require(null != col, "Cannot write a raw null collection")
+    if (null == col) throw new IllegalArgumentException("Cannot write a raw null collection")
     f(this, col)
   }
   
@@ -116,7 +116,7 @@ final class ProtobufOutputStreamOutput(private var os: OutputStream) extends Out
   
   // Objects
   final def writeNestedObject[T](obj: T)(f: (FieldOutput, T) => Unit): Unit = {
-    require(null != obj)
+    if (null == obj) throw new IllegalArgumentException("Cannot write nested null object")
     f(this, obj)
     writeTag(0, WireFormat.WIRETYPE_END_GROUP)
     

@@ -24,7 +24,7 @@ import fm.serializer.Input
 // TODO: Check if this patch needs to be ported: https://code.google.com/p/protobuf/source/diff?spec=svn349&r=349&format=side&path=/trunk/java/src/main/java/com/google/protobuf/CodedInputStream.java
 // TODO
 final class ProtobufInputStreamInput(is: InputStream, options: ProtobufOptions) extends ProtobufInput {
-  require(is.markSupported(), "mark() must be supported on the InputStream")
+  if (!is.markSupported()) throw new IllegalArgumentException("mark() must be supported on the InputStream")
   
   /**
    * The current number of bytes read so far (for the current scope)

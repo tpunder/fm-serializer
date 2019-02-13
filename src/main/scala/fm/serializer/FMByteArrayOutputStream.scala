@@ -81,8 +81,8 @@ final class FMByteArrayOutputStream(
   SpliceThresholdSize: Int = FMByteArrayOutputStream.DefaultSpliceThresholdSize
 ) extends OutputStream with Appendable {
   
-  require(MinUsefulBufferSize <= BufferSize, s"MinUsefulBufferSize ($MinUsefulBufferSize) should be less than or equal to BufferSize ($BufferSize)")
-  require(CompactThresholdSize <= BufferSize, s"CompactThresholdSize ($CompactThresholdSize) should be less than or equal to BufferSize ($BufferSize)")
+  if (MinUsefulBufferSize > BufferSize) throw new IllegalArgumentException(s"MinUsefulBufferSize ($MinUsefulBufferSize) should be less than or equal to BufferSize ($BufferSize)")
+  if (CompactThresholdSize > BufferSize) throw new IllegalArgumentException(s"CompactThresholdSize ($CompactThresholdSize) should be less than or equal to BufferSize ($BufferSize)")
 
   // UTF-8 has a max of 4 bytes
   private[this] val MAX_UTF8_CHAR_BYTES: Int = 4
