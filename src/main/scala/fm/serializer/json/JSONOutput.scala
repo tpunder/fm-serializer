@@ -34,9 +34,16 @@ final class JSONOutput(outputNulls: Boolean = true, outputFalse: Boolean = true,
   
   private def doIndent(): Unit = {
     out.write("\n")
-    if (level > 0) out.write(indent * level)
+
+    if (level > 0) {
+      var i: Int = 0
+      while (i < level) {
+        out.write(indent)
+        i += 1
+      }
+    }
   }
-  
+
   private def doComma(): Unit = {
     if (inObjectOrArray) {
       objectOrArrayElemCount += 1

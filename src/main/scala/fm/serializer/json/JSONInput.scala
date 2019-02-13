@@ -219,9 +219,9 @@ abstract class JSONInput(options: JSONOptions) extends Input {
   //
   
   // Basic Types
-  def readRawBool(): Boolean  = readOptionallyQuotedContiguousChars().toBoolean
-  def readRawFloat(): Float   = readOptionallyQuotedContiguousChars().toFloat
-  def readRawDouble(): Double = readOptionallyQuotedContiguousChars().toDouble
+  def readRawBool(): Boolean  = java.lang.Boolean.parseBoolean(readOptionallyQuotedContiguousChars())
+  def readRawFloat(): Float   = java.lang.Float.parseFloat(readOptionallyQuotedContiguousChars())
+  def readRawDouble(): Double = java.lang.Double.parseDouble(readOptionallyQuotedContiguousChars())
   
   def readRawString(): String = {
     skipWhitespace()
@@ -286,13 +286,13 @@ abstract class JSONInput(options: JSONOptions) extends Input {
   }
   
   // Ints  
-  def readRawInt(): Int = readOptionallyQuotedContiguousChars().toInt
+  def readRawInt(): Int = java.lang.Integer.parseInt(readOptionallyQuotedContiguousChars())
   def readRawUnsignedInt(): Int = readRawInt()
   def readRawSignedInt(): Int = readRawInt()
   def readRawFixedInt(): Int = readRawInt()
   
   // Longs
-  def readRawLong(): Long = readOptionallyQuotedContiguousChars().toLong
+  def readRawLong(): Long = java.lang.Long.parseLong(readOptionallyQuotedContiguousChars())
   def readRawUnsignedLong(): Long = readRawLong()
   def readRawSignedLong(): Long = readRawLong()
   def readRawFixedLong(): Long = readRawLong()
