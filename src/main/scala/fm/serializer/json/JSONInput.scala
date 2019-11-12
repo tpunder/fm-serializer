@@ -81,6 +81,7 @@ abstract class JSONInput(options: JSONOptions) extends Input {
   /** Is the current peek character the end of the field? */
   private def isEndOfContiguousChars(): Boolean = {
     peek match {
+      case -1  => true // EOF
       case '}' => true
       case ']' => true
       case ',' => true
