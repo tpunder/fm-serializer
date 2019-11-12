@@ -60,7 +60,7 @@ final class ProtobufInputStreamInput(is: InputStream, options: ProtobufOptions) 
     var read: Int = is.read(buf)
     while (read != -1) {
       bos.write(buf, 0, read)
-      is.read(buf)
+      read = is.read(buf)
     }
     bos.toByteArray
   }

@@ -22,19 +22,52 @@ import java.nio.charset.StandardCharsets.UTF_8
 import java.time.LocalDate
 import java.util.{Calendar, Date}
 import org.bson.types.ObjectId
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.{AppendedClues, FunSuite, Matchers}
 import scala.collection.JavaConverters._
 
-trait TestSerializer[BYTES] extends FunSuite with Matchers {
+trait TestSerializer[BYTES] extends FunSuite with Matchers with AppendedClues {
   // Does the serialization method support serializing raw collections
   def supportsRawCollections: Boolean = true
+
+  // Does the serialization method support serializing primitives
+  def supportsPrimitives: Boolean = true
 
   private val RepeatFactor: Int = 1024
   private val LongRepeatFactor: Int = 8190
 
   def serialize[T](v: T)(implicit ser: Serializer[T]): BYTES
   def deserialize[T](bytes: BYTES)(implicit deser: Deserializer[T]): T
-  
+
+  //===============================================================================================
+  // Primitive Testing
+  //===============================================================================================
+  if (supportsPrimitives) {
+    test("Int Primitives") {
+      checkPrimitive(123)
+      checkPrimitive(Int.MinValue)
+      checkPrimitive(Int.MaxValue)
+    }
+
+    test("Long Primitives") {
+      checkPrimitive(1234567890123L)
+      checkPrimitive(Long.MinValue)
+      checkPrimitive(Long.MaxValue)
+    }
+
+    test("String Primitives") {
+      checkPrimitive("foo")
+    }
+
+    test("ImmutableArray[Byte] Primitives") {
+      checkPrimitive(ImmutableArray.wrap("Hello World!".getBytes(UTF_8)))
+      checkPrimitive(ImmutableArray.wrap(("Hello \r\t\n \\ / \" \b\f oneByte: \u0024 twoByte: \u00A2 threeByte: \u20AC fourByteSupplementary: \uD83D\uDCA5  World!"*RepeatFactor).getBytes(UTF_8)))
+    }
+  }
+
+  private def checkPrimitive[@specialized T](value: T)(implicit ser: Serializer[T], deser: Deserializer[T]): Unit = {
+    deserialize[T](serialize(value)) shouldBe value
+  }
+
   //===============================================================================================
   // Simple Object Testing
   //===============================================================================================
