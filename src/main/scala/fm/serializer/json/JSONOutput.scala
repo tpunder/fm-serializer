@@ -19,7 +19,13 @@ import fm.serializer.{FieldOutput, NestedOutput, Output}
 import fm.serializer.FMByteArrayOutputStream
 import fm.serializer.base64.Base64
 
-final class JSONOutput(outputNulls: Boolean = true, outputFalse: Boolean = true, outputZeros: Boolean = true, prettyFormat: Boolean = false, indent: String = "  ") extends Output {
+final class JSONOutput(
+  outputNulls: Boolean = true,
+  outputFalse: Boolean = true,
+  outputZeros: Boolean = true,
+  prettyFormat: Boolean = false,
+  indent: String = "  "
+) extends Output {
   def allowStringMap: Boolean = true
   
   private[this] val out: FMByteArrayOutputStream = new FMByteArrayOutputStream()
@@ -149,7 +155,7 @@ final class JSONOutput(outputNulls: Boolean = true, outputFalse: Boolean = true,
           
           // Pad with leading zeroes
           var count: Int = hex.length
-          while(count < 4) {
+          while (count < 4) {
             out.write('0')
             count += 1
           }
@@ -338,7 +344,7 @@ final class JSONOutput(outputNulls: Boolean = true, outputFalse: Boolean = true,
   
   // Longs
   def writeFieldLong(number: Int, name: String, value: Long): Unit = {
-    if (outputZeros || value != 0l) {
+    if (outputZeros || value != 0L) {
       doComma()
       writeFieldName(name)
       writeRawLong(value)

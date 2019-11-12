@@ -271,7 +271,7 @@ abstract class ProtobufInput extends Input {
     
     // If we've already read our 32 bits we are just discarding the rest
     // until we reach our termination condition (a non-negative byte)
-    if(bytesRead > 4) {
+    if (bytesRead > 4) {
       if (tmp >= 0) result else readRawVarint32Impl(result, bytesRead + 1, readRawByte())
     } else {
       val shift = bytesRead * 7

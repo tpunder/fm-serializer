@@ -159,7 +159,7 @@ abstract class JSONInput(options: JSONOptions) extends Input {
   // This avoids the object creations in skipUnknownField()
   private[this] val skipRawObjectFun: Function1[FieldInput, AnyRef] = new Function1[FieldInput, AnyRef] {
     def apply(in: FieldInput): AnyRef = {
-      while(in.readFieldNumber(Map.empty) != 0) in.skipUnknownField()
+      while (in.readFieldNumber(Map.empty) != 0) in.skipUnknownField()
       null
     }
   }
@@ -167,7 +167,7 @@ abstract class JSONInput(options: JSONOptions) extends Input {
   // This avoids the object creations in skipUnknownField()
   private[this] val skipRawCollectionFun: Function1[CollectionInput, AnyRef] = new Function1[CollectionInput, AnyRef] {
     def apply(in: CollectionInput): AnyRef = {
-      while(in.hasAnotherElement) { handleCollectionComma(); skipUnknownField()};
+      while (in.hasAnotherElement) { handleCollectionComma(); skipUnknownField()};
       null
     }
   }
@@ -299,7 +299,7 @@ abstract class JSONInput(options: JSONOptions) extends Input {
     
   // Objects
   def readRawObject[T](f: FieldInput => T): T = {
-    if(nextValueIsNull) return null.asInstanceOf[T]
+    if (nextValueIsNull) return null.asInstanceOf[T]
     
     expectNextChar('{')
     val res: T = withCommas(isObject = true){ f(this) }

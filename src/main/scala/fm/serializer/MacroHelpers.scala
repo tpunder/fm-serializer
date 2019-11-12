@@ -1181,7 +1181,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
           
           var done: Boolean = false
           
-          while(!done) {
+          while (!done) {
             val number: Int = input.readFieldNumber(fieldNameToNumberMap)
             (number: @scala.annotation.switch) match {
               case ..$readCases

@@ -239,7 +239,7 @@ abstract class TestFMByteArrayOutputStream extends FunSuite with Matchers {
       rand.nextBytes(bytes)
     } else {
       var i = 0
-      while(i < length) {
+      while (i < length) {
         bytes(i) = ((i % 128) + 1).toByte
         i += 1
       }
@@ -255,7 +255,7 @@ abstract class TestFMByteArrayOutputStream extends FunSuite with Matchers {
     val os = newFMByteArrayOutputStream()
     
     var i: Int = 0
-    while(i < length) {
+    while (i < length) {
       val bulkLen: Int = 20
       
       if (rand.nextBoolean && length - i > bulkLen) {
@@ -449,7 +449,7 @@ abstract class TestFMByteArrayOutputStream extends FunSuite with Matchers {
     
     // Need to start writing bytes to make sure there are less than CompactThresholdSize bytes left in our original buffer
     var i = 0
-    while(os.available > CompactThresholdSize - 2) {
+    while (os.available > CompactThresholdSize - 2) {
       os.write(bytes(i))
       i += 1
     }

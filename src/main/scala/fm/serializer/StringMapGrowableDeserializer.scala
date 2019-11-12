@@ -31,7 +31,7 @@ final class StringMapGrowableDeserializer[V,Col <: Growable[(String,V)]](newInst
     
     var name: String = input.readFieldName()
     
-    while(null != name) {
+    while (null != name) {
       col += ((name, valueDeser.deserializeNested(input)))
       
       name = input.readFieldName()

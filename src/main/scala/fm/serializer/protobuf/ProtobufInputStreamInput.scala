@@ -58,7 +58,7 @@ final class ProtobufInputStreamInput(is: InputStream, options: ProtobufOptions) 
     val bos: ByteArrayOutputStream = new ByteArrayOutputStream
     val buf: Array[Byte] = new Array(256)
     var read: Int = is.read(buf)
-    while(read != -1) {
+    while (read != -1) {
       bos.write(buf, 0, read)
       is.read(buf)
     }
@@ -104,7 +104,7 @@ final class ProtobufInputStreamInput(is: InputStream, options: ProtobufOptions) 
    */
   private def incrementBytesRead(count: Int) {
     currentBytesRead += count
-    if(currentBytesRead > currentBytesLimit) throw InvalidProtocolBufferException.sizeLimitExceeded()
+    if (currentBytesRead > currentBytesLimit) throw InvalidProtocolBufferException.sizeLimitExceeded()
   }
   
   /**
