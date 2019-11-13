@@ -16,8 +16,26 @@
 package fm.serializer.json
 
 import java.lang.{StringBuilder => JavaStringBuilder}
+import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
 import fm.serializer.{CollectionInput, FieldInput, Input}
 import fm.serializer.base64.Base64
+
+object JSONInput {
+  private[serializer] def readFieldNumber(fieldName: String, nameToNumMap: Map[String, Int]): Int = {
+    if (null == fieldName) return 0
+
+    try {
+      // Exact name match
+      nameToNumMap(fieldName)
+    } catch {
+      case _: NoSuchElementException =>
+        // TODO: possibly require that the map be pre-populated with the lower case versions so we don't have to search through it
+        val lowerName: String = fieldName.toLowerCase
+        if (nameToNumMap.contains(lowerName)) nameToNumMap(lowerName)
+        else nameToNumMap.find{ case (n,i) => n.toLowerCase == lowerName }.map{ _._2 }.getOrElse(-1)
+    }
+  }
+}
 
 abstract class JSONInput(options: JSONOptions) extends Input {
   def allowStringMap: Boolean = true
@@ -113,19 +131,7 @@ abstract class JSONInput(options: JSONOptions) extends Input {
   //
   def readFieldNumber(nameToNumMap: Map[String, Int]): Int = {
     val name: String = readFieldName()
-    
-    if (null == name) return 0
-    
-    try {
-      // Exact name match
-      nameToNumMap(name)
-    } catch {
-      case _: NoSuchElementException =>
-        // TODO: possibly require that the map be pre-populated with the lower case versions so we don't have to search through it
-        val lowerName: String = name.toLowerCase
-        if (nameToNumMap.contains(lowerName)) nameToNumMap(lowerName)
-        else nameToNumMap.find{ case (n,i) => n.toLowerCase == lowerName }.map{ _._2 }.getOrElse(-1)
-    }
+    JSONInput.readFieldNumber(name, nameToNumMap)
   }
   
   def readFieldName(): String = {
