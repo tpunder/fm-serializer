@@ -4,9 +4,9 @@ name := "fm-serializer"
 
 description := "Scala Macro Based Serialization"
 
-scalaVersion := "2.12.8"
+scalaVersion := "2.12.10"
 
-crossScalaVersions := Seq("2.11.11", "2.12.8")
+crossScalaVersions := Seq("2.11.11", "2.12.10")
 
 // Needed for the JavaBean tests to work
 compileOrder := CompileOrder.JavaThenScala
