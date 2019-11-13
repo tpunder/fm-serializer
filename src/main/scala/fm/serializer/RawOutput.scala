@@ -15,6 +15,8 @@
  */
 package fm.serializer
 
+import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
+
 /**
  * RAW Output
  * 
@@ -28,6 +30,10 @@ trait RawOutput {
   def writeRawFloat(value: Float): Unit
   def writeRawDouble(value: Double): Unit
   def writeRawString(value: String): Unit
+  def writeRawBigInteger(value: JavaBigInteger): Unit
+  def writeRawBigDecimal(value: JavaBigDecimal): Unit
+
+  // Bytes
   def writeRawByteArray(value: Array[Byte]): Unit
   
   // Ints

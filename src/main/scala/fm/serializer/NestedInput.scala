@@ -15,6 +15,8 @@
  */
 package fm.serializer
 
+import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
+
 /**
  * NESTED Input
  * 
@@ -28,6 +30,8 @@ trait NestedInput {
   def readNestedFloat(): Float
   def readNestedDouble(): Double
   def readNestedString(): String
+  def readNestedBigInteger(): JavaBigInteger
+  def readNestedBigDecimal(): JavaBigDecimal
   
   // Bytes
   def readNestedByteArray(): Array[Byte]

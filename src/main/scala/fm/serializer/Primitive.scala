@@ -16,6 +16,7 @@
 package fm.serializer
 
 import fm.common.ImmutableArray
+import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
 
 object Primitive extends PrimitiveImplicits {
   val unsignedInt:  UnsignedIntPrimitive  = new UnsignedIntPrimitive()
@@ -195,4 +196,50 @@ final class FixedLongPrimitive extends Primitive[Long] {
   def defaultValue: Long = 0L
   def deserializeRaw(input: RawInput): Long = input.readRawFixedLong()
   def deserializeNested(input: NestedInput): Long = input.readNestedFixedLong()
+}
+
+final class JavaBigIntegerPrimitive extends Primitive[JavaBigInteger] {
+  def serializeRaw(output: RawOutput, v: JavaBigInteger): Unit = output.writeRawBigInteger(v)
+  def serializeNested(output: NestedOutput, v: JavaBigInteger): Unit = output.writeNestedBigInteger(v)
+  def serializeField(output: FieldOutput, number: Int, name: String, v: JavaBigInteger): Unit = output.writeFieldBigInteger(number, name, v)
+
+  def defaultValue: JavaBigInteger = null
+  def deserializeRaw(input: RawInput): JavaBigInteger = input.readRawBigInteger()
+  def deserializeNested(input: NestedInput): JavaBigInteger = input.readNestedBigInteger()
+}
+
+final class JavaBigDecimalPrimitive extends Primitive[JavaBigDecimal] {
+  def serializeRaw(output: RawOutput, v: JavaBigDecimal): Unit = output.writeRawBigDecimal(v)
+  def serializeNested(output: NestedOutput, v: JavaBigDecimal): Unit = output.writeNestedBigDecimal(v)
+  def serializeField(output: FieldOutput, number: Int, name: String, v: JavaBigDecimal): Unit = output.writeFieldBigDecimal(number, name, v)
+
+  def defaultValue: JavaBigDecimal = null
+  def deserializeRaw(input: RawInput): JavaBigDecimal = input.readRawBigDecimal()
+  def deserializeNested(input: NestedInput): JavaBigDecimal = input.readNestedBigDecimal()
+}
+
+final class ScalaBigIntPrimitive extends Primitive[BigInt] {
+  private def toJavaBigInteger(v: BigInt): JavaBigInteger = if (v != null) v.bigInteger else null
+  private def toScalaBigInteger(v: JavaBigInteger): BigInt = if (v != null) BigInt(v) else null
+
+  def serializeRaw(output: RawOutput, v: BigInt): Unit = output.writeRawBigInteger(toJavaBigInteger(v))
+  def serializeNested(output: NestedOutput, v: BigInt): Unit = output.writeNestedBigInteger(toJavaBigInteger(v))
+  def serializeField(output: FieldOutput, number: Int, name: String, v: BigInt): Unit = output.writeFieldBigInteger(number, name, toJavaBigInteger(v))
+
+  def defaultValue: BigInt = null
+  def deserializeRaw(input: RawInput): BigInt = toScalaBigInteger(input.readRawBigInteger())
+  def deserializeNested(input: NestedInput): BigInt = toScalaBigInteger(input.readNestedBigInteger())
+}
+
+final class ScalaBigDecimalPrimitive extends Primitive[BigDecimal] {
+  private def toJavaBigDecimal(v: BigDecimal): JavaBigDecimal = if (v != null) v.bigDecimal else null
+  private def toScalaBigDecimal(v: JavaBigDecimal): BigDecimal = if (v != null) BigDecimal(v) else null
+
+  def serializeRaw(output: RawOutput, v: BigDecimal): Unit = output.writeRawBigDecimal(toJavaBigDecimal(v))
+  def serializeNested(output: NestedOutput, v: BigDecimal): Unit = output.writeNestedBigDecimal(toJavaBigDecimal(v))
+  def serializeField(output: FieldOutput, number: Int, name: String, v: BigDecimal): Unit = output.writeFieldBigDecimal(number, name, toJavaBigDecimal(v))
+
+  def defaultValue: BigDecimal = null
+  def deserializeRaw(input: RawInput): BigDecimal = toScalaBigDecimal(input.readRawBigDecimal())
+  def deserializeNested(input: NestedInput): BigDecimal = toScalaBigDecimal(input.readNestedBigDecimal())
 }

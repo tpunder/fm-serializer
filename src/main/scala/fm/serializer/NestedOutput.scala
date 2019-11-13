@@ -15,6 +15,8 @@
  */
 package fm.serializer
 
+import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
+
 /**
  * NESTED Output
  * 
@@ -28,6 +30,8 @@ trait NestedOutput {
   def writeNestedFloat(value: Float): Unit
   def writeNestedDouble(value: Double): Unit
   def writeNestedString(value: String): Unit
+  def writeNestedBigInteger(value: JavaBigInteger): Unit
+  def writeNestedBigDecimal(value: JavaBigDecimal): Unit
   
   // Bytes
   def writeNestedByteArray(value: Array[Byte]): Unit

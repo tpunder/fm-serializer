@@ -16,6 +16,7 @@
 package fm.serializer.bson
 
 import fm.serializer.{CollectionInput, FieldInput, Input}
+import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
 import org.bson.types.{MaxKey, MinKey, ObjectId}
 import org.bson.{BsonBinary, BsonReader, BsonType}
 
@@ -41,6 +42,24 @@ final class BSONInput(reader: BsonReader) extends Input {
 
   private def clearBsonType(): Unit = currentBsonType = null
 
+  private def readJavaBigDecimalFields(in: FieldInput): JavaBigDecimal = {
+    var unscaledVal: JavaBigInteger = null
+    var scale: Int = -1
+
+    var fieldName: String = in.readFieldName()
+
+    while (fieldName != null) {
+      fieldName match {
+        case "unscaledVal" => unscaledVal = in.readNestedBigInteger()
+        case "scale" => scale = in.readNestedInt()
+        case _ => in.skipUnknownField()
+      }
+
+      fieldName = in.readFieldName()
+    }
+
+    new JavaBigDecimal(unscaledVal, scale)
+  }
 
   //
   // FIELD Input
@@ -139,6 +158,14 @@ final class BSONInput(reader: BsonReader) extends Input {
     clearBsonType()
     reader.readDouble()
   }
+
+  def readRawBigInteger(): JavaBigInteger = {
+    val res: JavaBigInteger = if (nextValueIsNull) null else new JavaBigInteger(reader.readBinaryData().getData)
+    clearBsonType()
+    res
+  }
+
+  def readRawBigDecimal(): JavaBigDecimal = readRawObject{ readJavaBigDecimalFields }
 
   def readRawString(): String = {
     val res: String = if (nextValueIsNull) null else reader.readString()
@@ -243,6 +270,8 @@ final class BSONInput(reader: BsonReader) extends Input {
   def readNestedBool(): Boolean = readRawBool()
   def readNestedFloat(): Float = readRawFloat()
   def readNestedDouble(): Double = readRawDouble()
+  def readNestedBigInteger(): JavaBigInteger = readRawBigInteger()
+  def readNestedBigDecimal(): JavaBigDecimal = readRawBigDecimal()
   def readNestedString(): String = readRawString()
 
   // Bytes

@@ -15,6 +15,8 @@
  */
 package fm.serializer
 
+import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
+
 /**
  * RAW Input
  * 
@@ -28,6 +30,8 @@ trait RawInput {
   def readRawFloat(): Float
   def readRawDouble(): Double
   def readRawString(): String
+  def readRawBigInteger(): JavaBigInteger
+  def readRawBigDecimal(): JavaBigDecimal
   
   // Bytes
   def readRawByteArray(): Array[Byte]

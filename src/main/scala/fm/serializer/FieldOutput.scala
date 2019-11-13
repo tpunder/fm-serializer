@@ -15,6 +15,8 @@
  */
 package fm.serializer
 
+import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
+
 /**
  * FIELD Output
  * 
@@ -28,6 +30,8 @@ trait FieldOutput {
   def writeFieldFloat(number: Int, name: String, value: Float): Unit
   def writeFieldDouble(number: Int, name: String, value: Double): Unit
   def writeFieldString(number: Int, name: String, value: String): Unit
+  def writeFieldBigInteger(number: Int, name: String, value: JavaBigInteger): Unit
+  def writeFieldBigDecimal(number: Int, name: String, value: JavaBigDecimal): Unit
   
   // Bytes
   def writeFieldByteArray(number: Int, name: String, value: Array[Byte]): Unit

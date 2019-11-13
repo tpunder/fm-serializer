@@ -17,6 +17,7 @@ package fm.serializer.protobuf
 
 import fm.serializer.{FieldOutput, NestedOutput, Output}
 import fm.serializer.FMByteArrayOutputStream
+import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
 import scala.annotation.tailrec
 
 
@@ -46,7 +47,12 @@ final class ProtobufOutput() extends Output {
   
   private def writeRawByte(byte: Int): Unit = os.write(byte)  
   private def writeRawBytes(bytes: Array[Byte]): Unit = os.write(bytes)
-  
+
+  private def writeJavaBigDecimalFields(out: FieldOutput, obj: JavaBigDecimal): Unit = {
+    out.writeFieldBigInteger(1, "unscaledVal", obj.unscaledValue())
+    out.writeFieldInt(2, "scale", obj.scale())
+  }
+
   //
   // RAW Output Implementation
   //
@@ -55,7 +61,10 @@ final class ProtobufOutput() extends Output {
   final def writeRawBool(value: Boolean): Unit = writeBoolNoTag(value)
   final def writeRawFloat(value: Float): Unit = writeFloatNoTag(value)
   final def writeRawDouble(value: Double): Unit = writeDoubleNoTag(value)
-  
+
+  final def writeRawBigInteger(value: JavaBigInteger): Unit = writeRawByteArray(value.toByteArray)
+  final def writeRawBigDecimal(value: JavaBigDecimal): Unit = writeRawObject(value){ writeJavaBigDecimalFields }
+
   final def writeRawString(value: String): Unit = {
     if (null == value) throw new IllegalArgumentException("Can't write a null rawString value")
     
@@ -101,7 +110,10 @@ final class ProtobufOutput() extends Output {
   final def writeNestedBool(value: Boolean): Unit = writeBoolNoTag(value)
   final def writeNestedFloat(value: Float): Unit = writeFloatNoTag(value)
   final def writeNestedDouble(value: Double): Unit = writeDoubleNoTag(value)
-  
+
+  final def writeNestedBigInteger(value: JavaBigInteger): Unit = writeNestedByteArray(value.toByteArray)
+  final def writeNestedBigDecimal(value: JavaBigDecimal): Unit = writeNestedObject(value){ writeJavaBigDecimalFields }
+
   final def writeNestedString(value: String): Unit = {
     if (null == value) return writeLengthDelimitedNull()
     writeLengthPrefixedString(value)
@@ -182,14 +194,26 @@ final class ProtobufOutput() extends Output {
     offset = writeRawVarint32(tag, array, offset)
     os.offset = writeRawLittleEndian64(java.lang.Double.doubleToRawLongBits(value), array, offset)
   }
-  
+
+  final def writeFieldBigInteger(number: Int, name: String, value: JavaBigInteger): Unit = {
+    if (null == value) return writeFieldNull(number, name)
+
+    writeFieldByteArray(number, name, value.toByteArray)
+  }
+
+  final def writeFieldBigDecimal(number: Int, name: String, value: JavaBigDecimal): Unit = {
+    if (null == value) return writeFieldNull(number, name)
+
+    writeFieldObject(number, name, value){ writeJavaBigDecimalFields }
+  }
+
   final def writeFieldString(number: Int, name: String, value: String): Unit = {
     if (null == value) return writeFieldNull(number, name)
-    
+
     writeTag(number, WireFormat.WIRETYPE_LENGTH_DELIMITED)
     writeLengthPrefixedString(value)
   }
-  
+
   // Bytes
   final def writeFieldByteArray(number: Int, name: String, value: Array[Byte]): Unit = {
     if (null == value) return writeFieldNull(number, name)

@@ -17,7 +17,6 @@ package fm.serializer
 
 import fm.common.IP
 import java.io.File
-import java.math.{BigInteger => JavaBigInteger}
 import java.util.Calendar
 
 /**
@@ -29,7 +28,6 @@ import java.util.Calendar
 trait CommonTypeImplicits {
 
   implicit val javaFile: MappedSimpleSerializer[String,File] = Primitive.string.map(_.toString, new File(_), null)
-  implicit val javaBigInteger: MappedSimpleSerializer[Array[Byte],JavaBigInteger] = Primitive.byteArray.map(_.toByteArray, new JavaBigInteger(_), null)
 
   implicit val ip: IPSerializer = new IPSerializer()
 

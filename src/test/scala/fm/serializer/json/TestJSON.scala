@@ -19,15 +19,18 @@ import fm.serializer.{Deserializer, Field, Serializer}
 
 final class TestDefaultJSON extends TestJSON {
   def serialize[T](v: T)(implicit ser: Serializer[T]): String = JSON.toJSON[T](v)
+  def deserialize[T](json: String)(implicit deser: Deserializer[T]): T = JSON.fromJSON[T](json)
 }
 
 final class TestMinimalJSON extends TestJSON {
   def serialize[T](v: T)(implicit ser: Serializer[T]): String = JSON.toMinimalJSON[T](v)
+  def deserialize[T](json: String)(implicit deser: Deserializer[T]): T = JSON.fromJSON[T](json)
   override def ignoreNullRetainTest: Boolean = true
 }
 
 final class TestPrettyJSON extends TestJSON {
   def serialize[T](v: T)(implicit ser: Serializer[T]): String = JSON.toPrettyJSON[T](v)
+  def deserialize[T](json: String)(implicit deser: Deserializer[T]): T = JSON.fromJSON[T](json)
 
   override protected def stringMapJSON: String =
     """
@@ -59,7 +62,9 @@ final class TestPrettyJSON extends TestJSON {
 
 abstract class TestJSON extends fm.serializer.TestSerializer[String]  {
   def serialize[T](v: T)(implicit ser: Serializer[T]): String
-  final def deserialize[T](json: String)(implicit deser: Deserializer[T]): T = JSON.fromJSON[T](json)
+  def deserialize[T](json: String)(implicit deser: Deserializer[T]): T
+
+  protected def allowsUnquotedStringValues: Boolean = true
 
   protected def stringMapJSON: String = """{"foo":123,"bar":321}"""
   protected def intMapJSON: String = """[{"_1":123,"_2":"foo"},{"_1":312,"_2":"bar"}]"""
@@ -87,9 +92,18 @@ abstract class TestJSON extends fm.serializer.TestSerializer[String]  {
 
   test("Unquoted Field Names") {
     deserialize[Unquoted]("""{name:null,int:123,long:123123123123123}""") should equal(Unquoted(null, 123, 123123123123123L))
-    deserialize[Unquoted]("""{name:nullnot,int:123,long:123123123123123}""") should equal(Unquoted("nullnot", 123, 123123123123123L))
-    deserialize[Unquoted]("""{name:foo,int:123,long:123123123123123}""") should equal(Unquoted("foo", 123, 123123123123123L))
-    deserialize[Unquoted]("""{name:foo,int:"123",long:"123123123123123"}""") should equal(Unquoted("foo", 123, 123123123123123L))
+    deserialize[Unquoted]("""{name:"nullnot",int:123,long:123123123123123}""") should equal(Unquoted("nullnot", 123, 123123123123123L))
+    deserialize[Unquoted]("""{name:"foo",int:123,long:123123123123123}""") should equal(Unquoted("foo", 123, 123123123123123L))
+    deserialize[Unquoted]("""{name:"foo",int:"123",long:"123123123123123"}""") should equal(Unquoted("foo", 123, 123123123123123L))
+  }
+
+  if (allowsUnquotedStringValues) {
+    test("Unquoted Field Names and Values") {
+      deserialize[Unquoted]("""{name:null,int:123,long:123123123123123}""") should equal(Unquoted(null, 123, 123123123123123L))
+      deserialize[Unquoted]("""{name:nullnot,int:123,long:123123123123123}""") should equal(Unquoted("nullnot", 123, 123123123123123L))
+      deserialize[Unquoted]("""{name:foo,int:123,long:123123123123123}""") should equal(Unquoted("foo", 123, 123123123123123L))
+      deserialize[Unquoted]("""{name:foo,int:"123",long:"123123123123123"}""") should equal(Unquoted("foo", 123, 123123123123123L))
+    }
   }
 
   case class AlternateName(@Field("type") tpe: String, @Field foo: Int)

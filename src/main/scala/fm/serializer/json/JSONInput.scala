@@ -223,7 +223,16 @@ abstract class JSONInput(options: JSONOptions) extends Input {
   def readRawBool(): Boolean  = java.lang.Boolean.parseBoolean(readOptionallyQuotedContiguousChars())
   def readRawFloat(): Float   = java.lang.Float.parseFloat(readOptionallyQuotedContiguousChars())
   def readRawDouble(): Double = java.lang.Double.parseDouble(readOptionallyQuotedContiguousChars())
-  
+
+  def readRawBigInteger(): JavaBigInteger = {
+    if (nextValueIsNull) null
+    else new JavaBigInteger(readOptionallyQuotedContiguousChars())
+  }
+  def readRawBigDecimal(): JavaBigDecimal = {
+    if (nextValueIsNull) null
+    else new JavaBigDecimal(readOptionallyQuotedContiguousChars())
+  }
+
   def readRawString(): String = {
     skipWhitespace()
     
@@ -336,6 +345,16 @@ abstract class JSONInput(options: JSONOptions) extends Input {
   def readNestedDouble(): Double = {
     handleCollectionComma()
     readRawDouble()
+  }
+
+  def readNestedBigInteger(): JavaBigInteger = {
+    handleCollectionComma()
+    readRawBigInteger()
+  }
+
+  def readNestedBigDecimal(): JavaBigDecimal = {
+    handleCollectionComma()
+    readRawBigDecimal()
   }
   
   def readNestedString(): String = {

@@ -261,10 +261,11 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers with AppendedClues {
     localDateNull: LocalDate = null,
     bsonTypes: BsonTypes = BsonTypes(),
     fmCommonTypes: FMCommonTypes = FMCommonTypes(),
-    supplementaryCharacters: SupplementaryCharacters = SupplementaryCharacters()
+    supplementaryCharacters: SupplementaryCharacters = SupplementaryCharacters(),
+    bigIntegerAndDecimalTypes: BigIntegerAndDecimalTypes = BigIntegerAndDecimalTypes()
   )
 
-  // Supplementary Characters as represented in Java as 2 characters but need
+  // Supplementary Characters are represented in Java as 2 characters but need
   // to be converted to a single UTF-8 character (1-4 bytes) when we serialize
   // http://www.oracle.com/us/technologies/java/supplementary-142654.html
   case class SupplementaryCharacters(
@@ -320,6 +321,17 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers with AppendedClues {
     uuidNull: UUID = null,
     uuidSome: Option[UUID] = Some(UUID()),
     uuidNone: Option[UUID] = None
+  )
+
+  case class BigIntegerAndDecimalTypes(
+    javaBigInteger: JavaBigInteger = new JavaBigInteger("123456789012345678901234567890"),
+    javaBigIntegerNull: JavaBigInteger = null,
+    javaBigDecimal: JavaBigDecimal = new JavaBigDecimal("12345678901234.5678901234567890"),
+    javaBigDecimalNull: JavaBigDecimal = null,
+    scalaBigInt: BigInt = BigInt("123456789012345678901234567890"),
+    scalaBigIntNull: BigInt = null,
+    scalaBigDecimal: BigDecimal = BigDecimal("12345678901234.5678901234567890"),
+    scalaBigDecimalNull: BigDecimal = null
   )
 
   case class MostlyEmptyFoo(@Field(19) bar: Bar)

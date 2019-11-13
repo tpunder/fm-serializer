@@ -16,11 +16,17 @@
 package fm.serializer.bson
 
 import fm.serializer.{FieldOutput, NestedOutput, Output}
+import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
 import org.bson.types.ObjectId
 import org.bson.{BsonBinary, BsonWriter}
 
 final class BSONOutput(writer: BsonWriter) extends Output {
   def allowStringMap: Boolean = true
+
+  private def writeJavaBigDecimalFields(out: FieldOutput, obj: JavaBigDecimal): Unit = {
+    out.writeFieldBigInteger(1, "unscaledVal", obj.unscaledValue())
+    out.writeFieldInt(2, "scale", obj.scale())
+  }
 
   //
   // RAW Output
@@ -45,6 +51,9 @@ final class BSONOutput(writer: BsonWriter) extends Output {
   def writeRawBool(value: Boolean): Unit = writer.writeBoolean(value)
   def writeRawFloat(value: Float): Unit = writer.writeDouble(value)
   def writeRawDouble(value: Double): Unit = writer.writeDouble(value)
+
+  def writeRawBigInteger(value: JavaBigInteger): Unit = writeRawByteArray(value.toByteArray)
+  def writeRawBigDecimal(value: JavaBigDecimal): Unit = writeRawObject(value){ writeJavaBigDecimalFields }
 
   def writeRawString(value: String): Unit = {
     if (null == value) writer.writeNull()
@@ -105,6 +114,8 @@ final class BSONOutput(writer: BsonWriter) extends Output {
   def writeNestedBool(value: Boolean): Unit = writeRawBool(value)
   def writeNestedFloat(value: Float): Unit = writeRawFloat(value)
   def writeNestedDouble(value: Double): Unit = writeRawDouble(value)
+  def writeNestedBigInteger(value: JavaBigInteger): Unit = writeRawBigInteger(value)
+  def writeNestedBigDecimal(value: JavaBigDecimal): Unit = writeRawBigDecimal(value)
   def writeNestedString(value: String): Unit = writeRawString(value)
 
   // Bytes
@@ -148,6 +159,16 @@ final class BSONOutput(writer: BsonWriter) extends Output {
   def writeFieldBool(number: Int, name: String, value: Boolean): Unit = writer.writeBoolean(name, value)
   def writeFieldFloat(number: Int, name: String, value: Float): Unit = writer.writeDouble(name, value)
   def writeFieldDouble(number: Int, name: String, value: Double): Unit = writer.writeDouble(name, value)
+
+  def writeFieldBigInteger(number: Int, name: String, value: JavaBigInteger): Unit = {
+    if (null == value) writer.writeNull(name)
+    else writeFieldByteArray(number, name, value.toByteArray)
+  }
+
+  def writeFieldBigDecimal(number: Int, name: String, value: JavaBigDecimal): Unit = {
+    if (null == value) writer.writeNull(name)
+    else writeFieldObject(number, name, value){ writeJavaBigDecimalFields }
+  }
 
   def writeFieldString(number: Int, name: String, value: String): Unit = {
     if (null == value) writer.writeNull(name)

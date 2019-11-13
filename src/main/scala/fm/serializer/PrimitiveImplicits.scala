@@ -30,6 +30,12 @@ trait PrimitiveImplicits {
   implicit val long:      LongPrimitive       = new LongPrimitive()
   implicit val char:      CharPrimitive       = new CharPrimitive()
 
+  implicit val javaBigInteger: JavaBigIntegerPrimitive = new JavaBigIntegerPrimitive()
+  implicit val javaBigDecimal: JavaBigDecimalPrimitive = new JavaBigDecimalPrimitive()
+
+  implicit val scalaBigInt: ScalaBigIntPrimitive = new ScalaBigIntPrimitive()
+  implicit val scalaBigDecimal: ScalaBigDecimalPrimitive = new ScalaBigDecimalPrimitive()
+
   implicit val immutableByteArray: ImmutableByteArrayPrimitive    = new ImmutableByteArrayPrimitive()
   implicit val immutableIntArray : ImmutableIntArrayDeserializer  = new ImmutableIntArrayDeserializer()
   implicit val immutableLongArray: ImmutableLongArrayDeserializer = new ImmutableLongArrayDeserializer()

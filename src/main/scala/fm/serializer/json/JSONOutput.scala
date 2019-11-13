@@ -18,6 +18,7 @@ package fm.serializer.json
 import fm.serializer.{FieldOutput, NestedOutput, Output}
 import fm.serializer.FMByteArrayOutputStream
 import fm.serializer.base64.Base64
+import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
 
 final class JSONOutput(
   outputNulls: Boolean = true,
@@ -94,6 +95,16 @@ final class JSONOutput(
     // Any ASCII printable char except quote and slashes
     ch > 31 && ch < 127 && ch != '"' && ch != '\\' && ch != '/'
   }
+
+  def writeRawBigInteger(value: JavaBigInteger): Unit = {
+    if (null == value) writeNull()
+    else out.writeASCII(value.toString)
+  }
+
+  def writeRawBigDecimal(value: JavaBigDecimal): Unit = {
+    if (null == value) writeNull()
+    else out.writeASCII(value.toString)
+  }
   
   def writeRawString(value: String): Unit = {
     if (null == value) {
@@ -168,12 +179,8 @@ final class JSONOutput(
     }
   
   def writeRawByteArray(value: Array[Byte]): Unit = {
-    if (null == value) {
-      writeNull()
-      return
-    }
-    
-    writeRawString(Base64.encodeBytes(value))
+    if (null == value) writeNull()
+    else writeRawString(Base64.encodeBytes(value))
   }
   
   // Ints
@@ -241,7 +248,17 @@ final class JSONOutput(
     doComma()
     writeRawDouble(value)
   }
-  
+
+  def writeNestedBigInteger(value: JavaBigInteger): Unit = {
+    doComma()
+    writeRawBigInteger(value)
+  }
+
+  def writeNestedBigDecimal(value: JavaBigDecimal): Unit = {
+    doComma()
+    writeRawBigDecimal(value)
+  }
+
   def writeNestedString(value: String): Unit = {
     doComma()
     writeRawString(value)
@@ -309,6 +326,22 @@ final class JSONOutput(
       doComma()
       writeFieldName(name)
       writeRawDouble(value)
+    }
+  }
+
+  def writeFieldBigInteger(number: Int, name: String, value: JavaBigInteger): Unit = {
+    if (null != value || outputNulls) {
+      doComma()
+      writeFieldName(name)
+      writeRawBigInteger(value)
+    }
+  }
+
+  def writeFieldBigDecimal(number: Int, name: String, value: JavaBigDecimal): Unit = {
+    if (null != value || outputNulls) {
+      doComma()
+      writeFieldName(name)
+      writeRawBigDecimal(value)
     }
   }
   

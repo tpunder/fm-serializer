@@ -17,7 +17,7 @@ package fm.serializer.protobuf
 
 import scala.annotation.tailrec
 import java.io.OutputStream
-
+import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
 import fm.serializer.{FieldOutput, NestedOutput, Output}
 import fm.serializer.fastutil.FastByteArrayOutputStream
 
@@ -38,7 +38,12 @@ final class ProtobufOutputStreamOutput(private var os: OutputStream) extends Out
   
   private def writeRawByte(byte: Int): Unit = os.write(byte)  
   private def writeRawBytes(bytes: Array[Byte]): Unit = os.write(bytes)
-  
+
+  private def writeJavaBigDecimalFields(out: FieldOutput, obj: JavaBigDecimal): Unit = {
+    out.writeFieldBigInteger(1, "unscaledVal", obj.unscaledValue())
+    out.writeFieldInt(2, "scale", obj.scale())
+  }
+
   //
   // RAW Output Implementation
   //
@@ -47,7 +52,10 @@ final class ProtobufOutputStreamOutput(private var os: OutputStream) extends Out
   final def writeRawBool(value: Boolean): Unit = writeBoolNoTag(value)
   final def writeRawFloat(value: Float): Unit = writeFloatNoTag(value)
   final def writeRawDouble(value: Double): Unit = writeDoubleNoTag(value)
-  
+
+  final def writeRawBigInteger(value: JavaBigInteger): Unit = writeRawByteArray(value.toByteArray)
+  final def writeRawBigDecimal(value: JavaBigDecimal): Unit = writeRawObject(value){ writeJavaBigDecimalFields }
+
   final def writeRawString(value: String): Unit = {
     if (null == value) throw new IllegalArgumentException("Can't write a null rawString value")
     
@@ -94,7 +102,10 @@ final class ProtobufOutputStreamOutput(private var os: OutputStream) extends Out
   final def writeNestedBool(value: Boolean): Unit = writeBoolNoTag(value)
   final def writeNestedFloat(value: Float): Unit = writeFloatNoTag(value)
   final def writeNestedDouble(value: Double): Unit = writeDoubleNoTag(value)
-  
+
+  final def writeNestedBigInteger(value: JavaBigInteger): Unit = writeNestedByteArray(value.toByteArray)
+  final def writeNestedBigDecimal(value: JavaBigDecimal): Unit = writeNestedObject(value){ writeJavaBigDecimalFields }
+
   final def writeNestedString(value: String): Unit = {
     if (null == value) writeLengthDelimitedNull() else writeStringNoTag(value)
   }
@@ -145,6 +156,18 @@ final class ProtobufOutputStreamOutput(private var os: OutputStream) extends Out
   final def writeFieldDouble(number: Int, name: String, value: Double): Unit = {
     writeTag(number, WireFormat.WIRETYPE_FIXED64_LE)
     writeDoubleNoTag(value)
+  }
+
+  final def writeFieldBigInteger(number: Int, name: String, value: JavaBigInteger): Unit = {
+    if (null == value) return writeFieldNull(number, name)
+
+    writeFieldByteArray(number, name, value.toByteArray)
+  }
+
+  final def writeFieldBigDecimal(number: Int, name: String, value: JavaBigDecimal): Unit = {
+    if (null == value) return writeFieldNull(number, name)
+
+    writeFieldObject(number, name, value){ writeJavaBigDecimalFields }
   }
   
   final def writeFieldString(number: Int, name: String, value: String): Unit = {

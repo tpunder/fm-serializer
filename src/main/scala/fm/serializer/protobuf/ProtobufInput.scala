@@ -15,13 +15,33 @@
  */
 package fm.serializer.protobuf
 
-import scala.annotation.{switch, tailrec}
 import fm.serializer.{CollectionInput, FieldInput, Input}
+import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
+import scala.annotation.{switch, tailrec}
 
 abstract class ProtobufInput extends Input {
  
   def allowStringMap: Boolean = false
-  
+
+  private def readJavaBigDecimalFields(in: FieldInput): JavaBigDecimal = {
+    var unscaledVal: JavaBigInteger = null
+    var scale: Int = -1
+
+    var fieldNumber: Int = in.readFieldNumber(Map.empty)
+
+    while (fieldNumber != 0) {
+      fieldNumber match {
+        case 1 => unscaledVal = in.readNestedBigInteger()
+        case 2 => scale = in.readNestedInt()
+        case _ => in.skipUnknownField()
+      }
+
+      fieldNumber = in.readFieldNumber(Map.empty)
+    }
+
+    new JavaBigDecimal(unscaledVal, scale)
+  }
+
   //
   // FIELD Input Implementation
   //
@@ -59,7 +79,13 @@ abstract class ProtobufInput extends Input {
   final def readRawBool(): Boolean = readRawVarint32() != 0
   final def readRawFloat(): Float = java.lang.Float.intBitsToFloat(readRawFixedInt())
   final def readRawDouble(): Double = java.lang.Double.longBitsToDouble(readRawFixedLong())
-  
+
+  final def readRawBigInteger(): JavaBigInteger = {
+    if (nextValueIsNull) null else new JavaBigInteger(readRawByteArray())
+  }
+
+  final def readRawBigDecimal(): JavaBigDecimal = readRawObject{ readJavaBigDecimalFields }
+
   def readRawString(): String
     
   // Bytes
@@ -104,7 +130,10 @@ abstract class ProtobufInput extends Input {
   final def readNestedBool(): Boolean = readRawVarint32() != 0
   final def readNestedFloat(): Float = java.lang.Float.intBitsToFloat(readRawFixedInt())
   final def readNestedDouble(): Double = java.lang.Double.longBitsToDouble(readRawFixedLong())
-  
+
+  final def readNestedBigInteger(): JavaBigInteger = if (nextValueIsNull) null else new JavaBigInteger(readNestedByteArray())
+  final def readNestedBigDecimal(): JavaBigDecimal = readNestedObject{ readJavaBigDecimalFields }
+
   def readNestedString(): String
   
   // Bytes
