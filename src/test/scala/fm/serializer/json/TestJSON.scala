@@ -16,22 +16,49 @@
 package fm.serializer.json
 
 import fm.serializer.{Deserializer, Field, Serializer}
+import java.io.StringReader
 
-final class TestDefaultJSON extends TestJSON {
+/**
+ * Special case that tests the toBytes/fromBytes methods
+ */
+final class TestDefaultJSONBytes extends fm.serializer.TestSerializer[Array[Byte]] {
+  def serialize[T](v: T)(implicit ser: Serializer[T]): Array[Byte] = JSON.toBytes[T](v)
+  def deserialize[T](json: Array[Byte])(implicit deser: Deserializer[T]): T = JSON.fromBytes[T](json)
+}
+
+final class TestDefaultJSONReader extends TestJSON {
+  def serialize[T](v: T)(implicit ser: Serializer[T]): String = JSON.toJSON[T](v)
+  def deserialize[T](json: String)(implicit deser: Deserializer[T]): T = JSON.fromReader[T](new StringReader(json))
+}
+
+final class TestMinimalJSONReader extends TestJSON {
+  def serialize[T](v: T)(implicit ser: Serializer[T]): String = JSON.toMinimalJSON[T](v)
+  def deserialize[T](json: String)(implicit deser: Deserializer[T]): T = JSON.fromReader[T](new StringReader(json))
+  override def ignoreNullRetainTest: Boolean = true
+}
+
+final class TestPrettyJSONReader extends TestPrettyJSON {
+  def serialize[T](v: T)(implicit ser: Serializer[T]): String = JSON.toPrettyJSON[T](v)
+  def deserialize[T](json: String)(implicit deser: Deserializer[T]): T = JSON.fromReader[T](new StringReader(json))
+}
+
+final class TestDefaultJSONCharSequence extends TestJSON {
   def serialize[T](v: T)(implicit ser: Serializer[T]): String = JSON.toJSON[T](v)
   def deserialize[T](json: String)(implicit deser: Deserializer[T]): T = JSON.fromJSON[T](json)
 }
 
-final class TestMinimalJSON extends TestJSON {
+final class TestMinimalJSONCharSequence extends TestJSON {
   def serialize[T](v: T)(implicit ser: Serializer[T]): String = JSON.toMinimalJSON[T](v)
   def deserialize[T](json: String)(implicit deser: Deserializer[T]): T = JSON.fromJSON[T](json)
   override def ignoreNullRetainTest: Boolean = true
 }
 
-final class TestPrettyJSON extends TestJSON {
+final class TestPrettyJSONCharSequence extends TestPrettyJSON {
   def serialize[T](v: T)(implicit ser: Serializer[T]): String = JSON.toPrettyJSON[T](v)
   def deserialize[T](json: String)(implicit deser: Deserializer[T]): T = JSON.fromJSON[T](json)
+}
 
+abstract class TestPrettyJSON extends TestJSON {
   override protected def stringMapJSON: String =
     """
       |{
