@@ -24,38 +24,45 @@ import java.io.StringReader
 final class TestDefaultJSONBytes extends fm.serializer.TestSerializer[Array[Byte]] {
   def serialize[T](v: T)(implicit ser: Serializer[T]): Array[Byte] = JSON.toBytes[T](v)
   def deserialize[T](json: Array[Byte])(implicit deser: Deserializer[T]): T = JSON.fromBytes[T](json)
+  def makeInput(json: Array[Byte]): JSONByteArrayInput = new JSONByteArrayInput(json, JSONOptions.default)
 }
 
 final class TestDefaultJSONReader extends TestJSON {
   def serialize[T](v: T)(implicit ser: Serializer[T]): String = JSON.toJSON[T](v)
   def deserialize[T](json: String)(implicit deser: Deserializer[T]): T = JSON.fromReader[T](new StringReader(json))
+  def makeInput(json: String): JSONReaderInput = new JSONReaderInput(new StringReader(json), JSONOptions.default)
 }
 
 final class TestMinimalJSONReader extends TestJSON {
   def serialize[T](v: T)(implicit ser: Serializer[T]): String = JSON.toMinimalJSON[T](v)
   def deserialize[T](json: String)(implicit deser: Deserializer[T]): T = JSON.fromReader[T](new StringReader(json))
+  def makeInput(json: String): JSONReaderInput = new JSONReaderInput(new StringReader(json), JSONOptions.default)
   override def ignoreNullRetainTest: Boolean = true
 }
 
 final class TestPrettyJSONReader extends TestPrettyJSON {
   def serialize[T](v: T)(implicit ser: Serializer[T]): String = JSON.toPrettyJSON[T](v)
   def deserialize[T](json: String)(implicit deser: Deserializer[T]): T = JSON.fromReader[T](new StringReader(json))
+  def makeInput(json: String): JSONReaderInput = new JSONReaderInput(new StringReader(json), JSONOptions.default)
 }
 
 final class TestDefaultJSONCharSequence extends TestJSON {
   def serialize[T](v: T)(implicit ser: Serializer[T]): String = JSON.toJSON[T](v)
   def deserialize[T](json: String)(implicit deser: Deserializer[T]): T = JSON.fromJSON[T](json)
+  def makeInput(json: String): JSONCharSequenceInput = new JSONCharSequenceInput(json, JSONOptions.default)
 }
 
 final class TestMinimalJSONCharSequence extends TestJSON {
   def serialize[T](v: T)(implicit ser: Serializer[T]): String = JSON.toMinimalJSON[T](v)
   def deserialize[T](json: String)(implicit deser: Deserializer[T]): T = JSON.fromJSON[T](json)
+  def makeInput(json: String): JSONCharSequenceInput = new JSONCharSequenceInput(json, JSONOptions.default)
   override def ignoreNullRetainTest: Boolean = true
 }
 
 final class TestPrettyJSONCharSequence extends TestPrettyJSON {
   def serialize[T](v: T)(implicit ser: Serializer[T]): String = JSON.toPrettyJSON[T](v)
   def deserialize[T](json: String)(implicit deser: Deserializer[T]): T = JSON.fromJSON[T](json)
+  def makeInput(json: String): JSONCharSequenceInput = new JSONCharSequenceInput(json, JSONOptions.default)
 }
 
 abstract class TestPrettyJSON extends TestJSON {

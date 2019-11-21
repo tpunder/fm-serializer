@@ -89,7 +89,14 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     def isSetVars: Vector[ValDef] = infos.map{ _.isSetVarDef }
     def readVars: Vector[ValDef] = infos.map{ _.readVarDef }
     
-    def setDefaultValuesForNonSetVariables: Vector[If] = infos.map{ f: FieldDeserializationInfo => q"if (!${f.isSetVarName}) ${f.readVarName} = ${f.defaultValue}" }
+    def setDefaultValuesForNonSetVariables: Vector[If] = infos.map{ f: FieldDeserializationInfo =>
+      val deserializer = if (f.deserializerTermName == nme.EMPTY) q"null" else q"${f.deserializerTermName}"
+
+      q"""if (!${f.isSetVarName}) {
+            ${f.readVarName} = ${f.defaultValue}
+            input.reportUnsetField(${f.number}, ${f.name}, ${f.hasUserDefinedDefaultValue}, ${deserializer})
+        }"""
+    }
 
     def ctorFields: Vector[FieldDeserializationInfo] = infos.filter{ _.field.constructorIdx >= 0 }.sortBy{ _.field.constructorIdx }
 
@@ -206,6 +213,10 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     val readVarName: TermName = newTermName(ctx.fresh(s"value_${number}_${name}"))
     val readVarDef: ValDef = q"var $readVarName: $tpe = ${defaultValueForType(tpe)}"
 
+    /** Does this field have a user-defined default value (e.g. foo: Int = 123) */
+    def hasUserDefinedDefaultValue: Boolean = field.defaultValue =!= null
+
+    /** The default (e.g. foo: Int = 123) or un-initialized value (e.g. 0 for Int) to use for this field  */
     def defaultValue: Tree = Option(field.defaultValue).getOrElse{
       if (deserializerTermName == nme.EMPTY) q"defaultValue" else q"${deserializerTermName}.defaultValue"
     }
@@ -1034,7 +1045,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     // There are left over vars or setters so let's bail
     if (varsOrSetters.nonEmpty) return Nil
     
-    (args zip defaults).zipWithIndex.map{ case ((arg, default), idx) =>
+    (args zip defaults).zipWithIndex.map{ case ((arg: Symbol, default: Option[Tree]), idx: Int) =>
       val returnType: Type = resolveType(tpe, arg.typeSignature)
       
       FieldImpl(

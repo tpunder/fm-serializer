@@ -16,13 +16,14 @@
 package fm.serializer.bson
 
 import fm.serializer.{Deserializer, Serializer, TestSerializer}
-import org.bson.BsonDocument
+import org.bson.{BsonDocument, BsonDocumentReader, RawBsonDocument}
 
 final class TestBsonDocument extends TestSerializer[BsonDocument] {
   override def supportsRawCollections: Boolean = false
   override def supportsPrimitives: Boolean = false
   def serialize[T](v: T)(implicit ser: Serializer[T]): BsonDocument = BSON.toBsonDocument(v)
   def deserialize[T](doc: BsonDocument)(implicit deser: Deserializer[T]): T = BSON.fromBsonDocument[T](doc)
+  def makeInput(bson: BsonDocument): BSONInput = new BSONInput(new BsonDocumentReader(bson))
 }
 
 final class TestBsonBytes extends TestSerializer[Array[Byte]] {
@@ -30,4 +31,5 @@ final class TestBsonBytes extends TestSerializer[Array[Byte]] {
   override def supportsPrimitives: Boolean = false
   def serialize[T](v: T)(implicit ser: Serializer[T]): Array[Byte] = BSON.toBsonBytes(v)
   def deserialize[T](bson: Array[Byte])(implicit deser: Deserializer[T]): T = BSON.fromBsonBytes[T](bson)
+  def makeInput(bson: Array[Byte]): BSONInput = new BSONInput(new BsonDocumentReader(new RawBsonDocument(bson)))
 }

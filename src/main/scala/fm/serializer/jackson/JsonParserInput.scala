@@ -92,6 +92,11 @@ final class JsonParserInput(parser: JsonParser, options: JSONOptions) extends In
    */
   override def nextValueIsNull: Boolean = consumeToken(JsonToken.VALUE_NULL)
 
+  private[this] var _lastFieldName: String = ""
+
+  final override def lastFieldName(): String = _lastFieldName
+  final override def lastFieldNumber(): Int = 0 // Use for unknown field reporting - there will be no field number
+
   /**
    * This is for reading fields of an object.
    *
@@ -99,7 +104,9 @@ final class JsonParserInput(parser: JsonParser, options: JSONOptions) extends In
    * Returns 0 if we've reached the end of the object/message
    */
   override def readFieldNumber(nameToNumMap: Map[String, Int]): Int = {
-    JSONInput.readFieldNumber(readFieldName(), nameToNumMap)
+    val fieldName: String = readFieldName()
+    _lastFieldName = fieldName
+    JSONInput.readFieldNumber(fieldName, nameToNumMap)
   }
 
   /**

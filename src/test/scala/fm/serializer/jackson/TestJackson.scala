@@ -17,7 +17,7 @@ package fm.serializer.jackson
 
 import fm.json.{Json, JsonNode}
 import fm.serializer.{Deserializer, Serializer}
-import fm.serializer.json.{JSON, TestJSON}
+import fm.serializer.json.{JSON, JSONOptions, TestJSON}
 
 final class TestJackson extends TestJSON {
   import fm.serializer.TestSerializer.Foo
@@ -26,6 +26,7 @@ final class TestJackson extends TestJSON {
 
   def serialize[T](v: T)(implicit ser: Serializer[T]): String = Jackson.toJSON[T](v)
   def deserialize[T](json: String)(implicit deser: Deserializer[T]): T = Jackson.fromJSON[T](json)
+  def makeInput(json: String): JsonParserInput = new JsonParserInput(Json.jsonFactory.createParser(json), JSONOptions.default)
 
   test("JsonNode") {
     val foo: Foo = Foo()

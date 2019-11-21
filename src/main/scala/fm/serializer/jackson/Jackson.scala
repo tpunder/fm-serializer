@@ -18,6 +18,7 @@ package fm.serializer.jackson
 import com.fasterxml.jackson.core.{JsonGenerator, JsonParser}
 import fm.json.{JsonNode, JsonNodeGenerator, JsonNodeParser}
 import fm.serializer.json.JSONOptions
+import fm.serializer.validation.{Validation, ValidationOptions, ValidationResult}
 import fm.serializer.{Deserializer, Serializer}
 import java.io.{Reader, StringWriter}
 
@@ -86,6 +87,30 @@ object Jackson {
   def fromReader[@specialized T](reader: Reader, options: JSONOptions)(implicit deserializer: Deserializer[T]): T = {
     val parser: JsonParser = jsonFactory.createParser(reader)
     read(new JsonParserInput(parser, options))
+  }
+
+  def validate[T](node: JsonNode)(implicit deserializer: Deserializer[T]): ValidationResult = {
+    validate[T](node, ValidationOptions.default)
+  }
+
+  def validate[T](node: JsonNode, options: ValidationOptions)(implicit deserializer: Deserializer[T]): ValidationResult = {
+    validate[T](new JsonNodeParser(node), options)
+  }
+
+  def validate[T](json: String)(implicit deserializer: Deserializer[T]): ValidationResult = {
+    validate[T](json, ValidationOptions.default)
+  }
+
+  def validate[T](json: String, options: ValidationOptions)(implicit deserializer: Deserializer[T]): ValidationResult = {
+    validate(jsonFactory.createParser(json))
+  }
+
+  def validate[T](parser: JsonParser)(implicit deserializer: Deserializer[T]): ValidationResult = {
+    validate[T](parser, ValidationOptions.default)
+  }
+
+  def validate[T](parser: JsonParser, options: ValidationOptions)(implicit deserializer: Deserializer[T]): ValidationResult = {
+    Validation.validate(new JsonParserInput(parser, JSONOptions.default), options)
   }
 
   private def read[@specialized T](input: JsonParserInput)(implicit deserializer: Deserializer[T]): T = {

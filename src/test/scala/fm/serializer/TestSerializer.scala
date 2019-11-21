@@ -16,6 +16,7 @@
 package fm.serializer
 
 import fm.common.{IP, ImmutableArray, ImmutableDate, UUID}
+import fm.serializer.validation.{Validation, ValidationError, ValidationResult}
 import java.io.File
 import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
 import java.nio.charset.StandardCharsets.UTF_8
@@ -186,6 +187,19 @@ object TestSerializer {
   )
 
   case class MostlyEmptyFoo(@Field(19) bar: Bar)
+  case class ValidationCls(string: String, int: Int, nested: NestedValidation, defaultValue: String = "default")
+  case class NestedValidation(foo: String, bar: Int)
+  case class ValidationMissingNestedCls(string: String, int: Int, nested: NestedValidationMissingField)
+  case class NestedValidationMissingField(foo: String)
+
+  // Wrong type for "int" field
+  case class ValidationWrongType(string: String, int: String)
+
+  // Missing "nested"
+  case class ValidationMissingField(string: String, int: Int)
+
+  // Extra "qweqwe" field
+  case class ValidationExtraField(string: String, int: Int, nested: NestedValidation, defaultValue: String, qweqwe: String)
 }
 
 trait TestSerializer[BYTES] extends FunSuite with Matchers with AppendedClues {
@@ -199,6 +213,9 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers with AppendedClues {
 
   def serialize[T](v: T)(implicit ser: Serializer[T]): BYTES
   def deserialize[T](bytes: BYTES)(implicit deser: Deserializer[T]): T
+
+  // This should return the ProtobufInput/JsonInput/etc and is for testing the ValidatingInput
+  def makeInput(bytes: BYTES): Input
 
   //===============================================================================================
   // Primitive Testing
@@ -229,6 +246,59 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers with AppendedClues {
   private def checkPrimitive[@specialized T](value: T)(implicit ser: Serializer[T], deser: Deserializer[T]): Unit = {
     deserialize[T](serialize(value)) shouldBe value
   }
+
+  //===============================================================================================
+  // Validation Testing
+  //===============================================================================================
+  test("Validation - Success") {
+    checkValidation(
+      obj = ValidationCls("string", 123, NestedValidation("foo", 321)),
+      expected = ValidationResult.Success
+    )
+  }
+
+  test("Validation - Wrong Type") {
+    checkValidation(
+      obj = ValidationWrongType("string", "not int"),
+      expected = ValidationResult.Failure(Vector(ValidationError.PrimitiveError("", 2, "int")("")))
+    )
+  }
+
+  test("Validation - Missing Field") {
+    checkValidation(
+      obj = ValidationMissingField("string", 123),
+      expected = ValidationResult.Failure(Vector(ValidationError.MissingField("", 3, "nested")))
+    )
+  }
+
+  test("Validation - Nested Missing Field") {
+    checkValidation(
+      obj = ValidationMissingNestedCls("string", 123, NestedValidationMissingField("foo")),
+      expected = ValidationResult.Failure(Vector(ValidationError.MissingField("nested", 2, "bar")))
+    )
+  }
+
+  test("Validation - Extra Field") {
+    val obj: ValidationExtraField = ValidationExtraField("string", 123, NestedValidation("foo", 321), "default", "qwe")
+    val bytes: BYTES = serialize(obj)
+    val res: ValidationResult = Validation.validate[ValidationCls](makeInput(bytes))
+
+    res.isFailure shouldBe true
+    res.errors.length shouldBe 1
+
+    val error: ValidationError = res.errors.head
+
+    error.isInstanceOf[ValidationError.UnknownField] shouldBe true
+
+    // One or both of these should be set depending on if the serialization uses field numbers or field names
+    require(error.fieldNumber === 5 || error.fieldName === "qweqwe")
+  }
+
+  private def checkValidation[T](obj: T, expected: ValidationResult)(implicit ser: Serializer[T]): Unit = {
+    val bytes: BYTES = serialize(obj)
+    val res: ValidationResult = Validation.validate[ValidationCls](makeInput(bytes))
+    res shouldBe expected
+  } withClue s"obj: $obj, expected: $expected"
 
   //===============================================================================================
   // Simple Object Testing

@@ -23,4 +23,5 @@ import fm.serializer.{Deserializer, Serializer}
 final class TestProtobufArray extends fm.serializer.TestSerializer[Array[Byte]]  {
   def serialize[T](v: T)(implicit ser: Serializer[T]): Array[Byte] = Protobuf.toBytes[T](v)
   def deserialize[T](bytes: Array[Byte])(implicit deser: Deserializer[T]): T = Protobuf.fromBytes[T](bytes)
+  def makeInput(bytes: Array[Byte]): ProtobufByteArrayInput = new ProtobufByteArrayInput(bytes, ProtobufOptions.default)
 }

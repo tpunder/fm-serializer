@@ -15,6 +15,7 @@
  */
 package fm.serializer.json
 
+import fm.serializer.validation.{Validation, ValidationOptions, ValidationResult}
 import fm.serializer.{Deserializer, Serializer}
 import java.io.Reader
 import java.nio.charset.StandardCharsets.UTF_8
@@ -82,5 +83,13 @@ object JSON {
   
   def fromReader[@specialized T](reader: Reader, options: JSONOptions)(implicit deserializer: Deserializer[T]): T = {
     deserializer.deserializeRaw(new JSONReaderInput(reader, options))
+  }
+
+  def validate[T](json: String)(implicit deserializer: Deserializer[T]): ValidationResult = {
+    validate[T](json, ValidationOptions.default)
+  }
+
+  def validate[T](json: String, options: ValidationOptions)(implicit deserializer: Deserializer[T]): ValidationResult = {
+    Validation.validate(new JSONCharSequenceInput(json, JSONOptions.default), options)
   }
 }

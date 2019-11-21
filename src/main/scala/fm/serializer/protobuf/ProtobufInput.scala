@@ -45,13 +45,20 @@ abstract class ProtobufInput extends Input {
   //
   // FIELD Input Implementation
   //
+
+  private[this] var _lastFieldNumber: Int = 0
+
+  final override def lastFieldNumber(): Int = _lastFieldNumber
+  final override def lastFieldName(): String = "" // Used for unknown field reporting - we will never have a field name
   
   /**
    * Read the next field number
    */
   final def readFieldNumber(nameToNumMap: Map[String, Int]): Int = {
     val tag: Int = readTag()
-    WireFormat.getTagFieldNumber(tag)
+    val fieldNumber: Int = WireFormat.getTagFieldNumber(tag)
+    _lastFieldNumber = fieldNumber
+    fieldNumber
   }
   
   // Since allowStringMap is false this doesn't need to be implemented
@@ -114,10 +121,18 @@ abstract class ProtobufInput extends Input {
 //    if (getTagWireType(lastTag) == WireFormat.WIRETYPE_FIXED64_LE) readRawLittleEndian64()
 //    else readRawBigEndian64()
   }
+
+  @inline private def withTagTypeChecks[T](enabled: Boolean)(f: => T): T = {
+    val prevTagTypeChecksEnabled: Boolean = tagTypeChecksEnabled
+    tagTypeChecksEnabled = enabled
+    val res: T = f
+    tagTypeChecksEnabled = prevTagTypeChecksEnabled
+    res
+  }
     
   // Objects
   def readRawObject[T](f: FieldInput => T): T = {
-    f(this)
+    withTagTypeChecks(true){ f(this) }
   }
   
   // Collections
@@ -127,9 +142,20 @@ abstract class ProtobufInput extends Input {
   // NESTED Input Implementation
   //
   // Basic Types
-  final def readNestedBool(): Boolean = readRawVarint32() != 0
-  final def readNestedFloat(): Float = java.lang.Float.intBitsToFloat(readRawFixedInt())
-  final def readNestedDouble(): Double = java.lang.Double.longBitsToDouble(readRawFixedLong())
+  final def readNestedBool(): Boolean = {
+    checkLastTagTypeWas(WireFormat.WIRETYPE_VARINT)
+    readRawVarint32() != 0
+  }
+
+  final def readNestedFloat(): Float = {
+    checkLastTagTypeWas(WireFormat.WIRETYPE_FIXED32_LE)
+    java.lang.Float.intBitsToFloat(readRawFixedInt())
+  }
+
+  final def readNestedDouble(): Double = {
+    checkLastTagTypeWas(WireFormat.WIRETYPE_FIXED64_LE)
+    java.lang.Double.longBitsToDouble(readRawFixedLong())
+  }
 
   final def readNestedBigInteger(): JavaBigInteger = if (nextValueIsNull) null else new JavaBigInteger(readNestedByteArray())
   final def readNestedBigDecimal(): JavaBigDecimal = readNestedObject{ readJavaBigDecimalFields }
@@ -139,39 +165,71 @@ abstract class ProtobufInput extends Input {
   // Bytes
   final def readNestedByteArray(): Array[Byte] = {
     if (lastTagIsNullValue) return null
+
+    checkLastTagTypeWas(WireFormat.WIRETYPE_LENGTH_DELIMITED)
     
     val size: Int = readRawVarint32()
     readRawBytes(size)
   }
   
   // Ints  
-  final def readNestedInt(): Int = readRawVarint32()
-  final def readNestedUnsignedInt(): Int = readRawVarint32()
-  final def readNestedSignedInt(): Int = decodeZigZag32(readRawVarint32())
+  final def readNestedInt(): Int = {
+    checkLastTagTypeWas(WireFormat.WIRETYPE_VARINT)
+    readRawVarint32()
+  }
+
+  final def readNestedUnsignedInt(): Int = {
+    checkLastTagTypeWas(WireFormat.WIRETYPE_VARINT)
+    readRawVarint32()
+  }
+
+  final def readNestedSignedInt(): Int = {
+    checkLastTagTypeWas(WireFormat.WIRETYPE_VARINT)
+    decodeZigZag32(readRawVarint32())
+  }
   
-  final def readNestedFixedInt(): Int = readRawFixedInt()
+  final def readNestedFixedInt(): Int = {
+    checkLastTagTypeWas(WireFormat.WIRETYPE_FIXED32_LE)
+    readRawFixedInt()
+  }
   
   // Longs
-  final def readNestedLong(): Long = readRawVarint64()
-  final def readNestedUnsignedLong(): Long = readRawVarint64()
-  final def readNestedSignedLong(): Long = decodeZigZag64(readRawVarint64())
+  final def readNestedLong(): Long = {
+    checkLastTagTypeWas(WireFormat.WIRETYPE_VARINT)
+    readRawVarint64()
+  }
+
+  final def readNestedUnsignedLong(): Long = {
+    checkLastTagTypeWas(WireFormat.WIRETYPE_VARINT)
+    readRawVarint64()
+  }
+
+  final def readNestedSignedLong(): Long = {
+    checkLastTagTypeWas(WireFormat.WIRETYPE_VARINT)
+    decodeZigZag64(readRawVarint64())
+  }
   
-  final def readNestedFixedLong(): Long = readRawFixedLong()
+  final def readNestedFixedLong(): Long = {
+    checkLastTagTypeWas(WireFormat.WIRETYPE_FIXED64_LE)
+    readRawFixedLong()
+  }
   
   // Objects
   def readNestedObject[T](f: FieldInput => T): T = {
     if (lastTagIsNullValue) return null.asInstanceOf[T]
-    
+
+    checkLastTagTypeWas(WireFormat.WIRETYPE_START_GROUP)
+
     // We use grouped messages for Nested and Field objects
-    f(this)
-    
+    withTagTypeChecks(true){ f(this) }
+
     //if (WireFormat.getTagWireType(lastTag) == WireFormat.WIRETYPE_LENGTH_DELIMITED) return readLengthDelimited(f)
     //f(this)
   }
   
   // Collections
   def readNestedCollection[T](f: CollectionInput => T): T = {
-    readLengthDelimited(f)
+    readLengthDelimited{ input: Input => withTagTypeChecks(false){ f(input) } }
   }
   
   //
@@ -191,7 +249,8 @@ abstract class ProtobufInput extends Input {
   protected def readRawBytes(size: Int): Array[Byte]
   protected def readLengthDelimited[T](f: Input => T): T
 
-  
+  private[this] var tagTypeChecksEnabled: Boolean = false
+
   /**
    * Verifies that the last call to readTag() returned the given tag value.
    * This is used to verify that a nested group ended with the correct
@@ -202,6 +261,13 @@ abstract class ProtobufInput extends Input {
    */
   final protected def checkLastTagWas(value: Int): Unit = {
     if (lastTag != value) throw InvalidProtocolBufferException.invalidEndTag()
+  }
+
+  final protected def checkLastTagTypeWas(expectedWireType: Int): Unit = {
+    if (!tagTypeChecksEnabled) return
+
+    val wireType: Int = WireFormat.getTagWireType(lastTag)
+    if (wireType != expectedWireType) throw InvalidProtocolBufferException.unexpectedWireType(wireType, expectedWireType)
   }
   
   /**
@@ -254,7 +320,7 @@ abstract class ProtobufInput extends Input {
       case WireFormat.WIRETYPE_NULL =>
         true
       case _ =>
-        throw InvalidProtocolBufferException.invalidWireType()
+        throw InvalidProtocolBufferException.invalidWireType(wireType)
     }
   }
   
@@ -281,7 +347,7 @@ abstract class ProtobufInput extends Input {
    * @return A signed 64-bit integer.
    */
   protected def decodeZigZag64(n: Long): Long = (n >>> 1) ^ -(n & 1)
-  
+
   /**
    * Read a raw Varint from the stream.  If larger than 32 bits, discard the
    * upper bits.
@@ -358,37 +424,37 @@ abstract class ProtobufInput extends Input {
     ((b8.toLong & 0xff) << 56)
   }
   
-  /** Read a 32-bit big-endian integer from the stream. */
-  protected final def readRawBigEndian32(): Int = {
-    val b1: Byte = readRawByte()
-    val b2: Byte = readRawByte()
-    val b3: Byte = readRawByte()
-    val b4: Byte = readRawByte()
-    
-    ((b1.toInt & 0xff) << 24) |
-    ((b2.toInt & 0xff) << 16) |
-    ((b3.toInt & 0xff) <<  8) |
-    ((b4.toInt & 0xff)      )
-  }
-  
-  /** Read a 64-bit big-endian integer from the stream. */
-  protected final def readRawBigEndian64(): Long = {
-    val b1: Byte = readRawByte()
-    val b2: Byte = readRawByte()
-    val b3: Byte = readRawByte()
-    val b4: Byte = readRawByte()
-    val b5: Byte = readRawByte()
-    val b6: Byte = readRawByte()
-    val b7: Byte = readRawByte()
-    val b8: Byte = readRawByte()
-    
-    ((b1.toLong & 0xff) << 56) |
-    ((b2.toLong & 0xff) << 48) |
-    ((b3.toLong & 0xff) << 40) |
-    ((b4.toLong & 0xff) << 32) |
-    ((b5.toLong & 0xff) << 24) |
-    ((b6.toLong & 0xff) << 16) |
-    ((b7.toLong & 0xff) <<  8) |
-    ((b8.toLong & 0xff)      )
-  }
+//  /** Read a 32-bit big-endian integer from the stream. */
+//  protected final def readRawBigEndian32(): Int = {
+//    val b1: Byte = readRawByte()
+//    val b2: Byte = readRawByte()
+//    val b3: Byte = readRawByte()
+//    val b4: Byte = readRawByte()
+//
+//    ((b1.toInt & 0xff) << 24) |
+//    ((b2.toInt & 0xff) << 16) |
+//    ((b3.toInt & 0xff) <<  8) |
+//    ((b4.toInt & 0xff)      )
+//  }
+//
+//  /** Read a 64-bit big-endian integer from the stream. */
+//  protected final def readRawBigEndian64(): Long = {
+//    val b1: Byte = readRawByte()
+//    val b2: Byte = readRawByte()
+//    val b3: Byte = readRawByte()
+//    val b4: Byte = readRawByte()
+//    val b5: Byte = readRawByte()
+//    val b6: Byte = readRawByte()
+//    val b7: Byte = readRawByte()
+//    val b8: Byte = readRawByte()
+//
+//    ((b1.toLong & 0xff) << 56) |
+//    ((b2.toLong & 0xff) << 48) |
+//    ((b3.toLong & 0xff) << 40) |
+//    ((b4.toLong & 0xff) << 32) |
+//    ((b5.toLong & 0xff) << 24) |
+//    ((b6.toLong & 0xff) << 16) |
+//    ((b7.toLong & 0xff) <<  8) |
+//    ((b8.toLong & 0xff)      )
+//  }
 }

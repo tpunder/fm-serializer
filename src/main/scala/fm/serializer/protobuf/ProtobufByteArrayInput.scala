@@ -62,6 +62,8 @@ final class ProtobufByteArrayInput(buffer: Array[Byte], options: ProtobufOptions
   def readLengthDelimited[T](f: Input => T): T = {
     // The value is null if the tag is for a null field
     if (lastTagIsNullValue) return null.asInstanceOf[T]
+
+    checkLastTagTypeWas(WireFormat.WIRETYPE_LENGTH_DELIMITED)
     
     val length: Int = readRawVarint32()
     

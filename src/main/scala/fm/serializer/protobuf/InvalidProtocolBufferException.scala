@@ -54,9 +54,12 @@ object InvalidProtocolBufferException {
   def invalidEndTag() = new InvalidProtocolBufferException(
       "Protocol message end-group tag did not match expected tag.")
   
-  def invalidWireType() = new InvalidProtocolBufferException(
-      "Protocol message tag had invalid wire type.")
-  
+  def invalidWireType(wireType: Int) = new InvalidProtocolBufferException(
+      "Protocol message tag had invalid wire type: "+wireType)
+
+  def unexpectedWireType(wireType: Int, expectedWireType: Int) = new InvalidProtocolBufferException(
+    "Protocol message tag had unexpected wire type.  Expected: "+expectedWireType+"  Got: "+wireType)
+
   def recursionLimitExceeded() = new InvalidProtocolBufferException(
       "Protocol message had too many levels of nesting.  May be malicious.  " +
       "Use CodedInputStream.setRecursionLimit() to increase the depth limit.")

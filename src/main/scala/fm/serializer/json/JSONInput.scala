@@ -38,7 +38,7 @@ object JSONInput {
 }
 
 abstract class JSONInput(options: JSONOptions) extends Input {
-  def allowStringMap: Boolean = true
+  final def allowStringMap: Boolean = true
   
   private[this] var inObject: Boolean = false
   private[this] var inArray: Boolean = false
@@ -67,10 +67,7 @@ abstract class JSONInput(options: JSONOptions) extends Input {
     skipWhitespace()
     
     if (peek == '"') {
-      next // Eat the leading quote
-      val res: String = readContiguousChars()
-      expectNextChar('"') // We expect a trailing quote
-      res
+      readRawString()
     } else {
       readContiguousChars()
     }
@@ -108,14 +105,14 @@ abstract class JSONInput(options: JSONOptions) extends Input {
       case _   => Character.isWhitespace(peek)
     }
   }
-  
-  def expectNextChar(ch: Int): Unit = {
+
+  final def expectNextChar(ch: Int): Unit = {
     skipWhitespace()
     val n: Char = next
-    if (n != ch) throw new IllegalArgumentException(s"Expected next char to be: ${ch.toChar} but got $n")
+    if (n != ch) throw new IllegalArgumentException(s"Expected next char to be: '${ch.toChar}' but got '$n'")
   }
-  
-  def nextValueIsNull: Boolean = {
+
+  final def nextValueIsNull: Boolean = {
     skipWhitespace()
     if (peek == 'n') {
       val res: String = readContiguousChars()
@@ -129,12 +126,18 @@ abstract class JSONInput(options: JSONOptions) extends Input {
   //
   // FIELD Input
   //
-  def readFieldNumber(nameToNumMap: Map[String, Int]): Int = {
+  private[this] var _lastFieldName: String = ""
+
+  final override def lastFieldName(): String = _lastFieldName
+  final override def lastFieldNumber(): Int = 0 // Use for unknown field reporting - there will be no field number
+
+  final override def readFieldNumber(nameToNumMap: Map[String, Int]): Int = {
     val name: String = readFieldName()
+    _lastFieldName = name
     JSONInput.readFieldNumber(name, nameToNumMap)
   }
   
-  def readFieldName(): String = {
+  final override def readFieldName(): String = {
     handleFieldComma()
     skipWhitespace()
     
@@ -152,8 +155,8 @@ abstract class JSONInput(options: JSONOptions) extends Input {
     
     name
   }
-  
-  def skipUnknownField(): Unit = {
+
+  final override def skipUnknownField(): Unit = {
     skipWhitespace()
     peek match {
       case '"' => readRawString()
@@ -198,9 +201,9 @@ abstract class JSONInput(options: JSONOptions) extends Input {
     
     res
   }
-  
-  def handleFieldComma(): Unit = handleCommaImpl(inObject, '}')
-  def handleCollectionComma(): Unit = handleCommaImpl(inArray, ']')
+
+  final def handleFieldComma(): Unit = handleCommaImpl(inObject, '}')
+  final def handleCollectionComma(): Unit = handleCommaImpl(inArray, ']')
   
   private def handleCommaImpl(cond: Boolean, closingChar: Char): Unit = {
     if (cond) {
@@ -216,7 +219,7 @@ abstract class JSONInput(options: JSONOptions) extends Input {
   //
   // COLLECTION Input
   //
-  def hasAnotherElement: Boolean = {
+  final def hasAnotherElement: Boolean = {
     skipWhitespace()
     peek != ']'
   }
@@ -226,20 +229,21 @@ abstract class JSONInput(options: JSONOptions) extends Input {
   //
   
   // Basic Types
-  def readRawBool(): Boolean  = java.lang.Boolean.parseBoolean(readOptionallyQuotedContiguousChars())
-  def readRawFloat(): Float   = java.lang.Float.parseFloat(readOptionallyQuotedContiguousChars())
-  def readRawDouble(): Double = java.lang.Double.parseDouble(readOptionallyQuotedContiguousChars())
+  final def readRawBool(): Boolean  = java.lang.Boolean.parseBoolean(readOptionallyQuotedContiguousChars())
+  final def readRawFloat(): Float   = java.lang.Float.parseFloat(readOptionallyQuotedContiguousChars())
+  final def readRawDouble(): Double = java.lang.Double.parseDouble(readOptionallyQuotedContiguousChars())
 
-  def readRawBigInteger(): JavaBigInteger = {
+  final def readRawBigInteger(): JavaBigInteger = {
     if (nextValueIsNull) null
     else new JavaBigInteger(readOptionallyQuotedContiguousChars())
   }
-  def readRawBigDecimal(): JavaBigDecimal = {
+
+  final def readRawBigDecimal(): JavaBigDecimal = {
     if (nextValueIsNull) null
     else new JavaBigDecimal(readOptionallyQuotedContiguousChars())
   }
 
-  def readRawString(): String = {
+  final def readRawString(): String = {
     skipWhitespace()
     
     // If we don't start with a quote then it should be a null value (or an unquoted number/string)
@@ -296,25 +300,25 @@ abstract class JSONInput(options: JSONOptions) extends Input {
   }
   
   // Bytes
-  def readRawByteArray(): Array[Byte] = {
+  final def readRawByteArray(): Array[Byte] = {
     val s: String = readRawString()
     if (null == s) null else Base64.decode(s)
   }
   
   // Ints  
-  def readRawInt(): Int = java.lang.Integer.parseInt(readOptionallyQuotedContiguousChars())
-  def readRawUnsignedInt(): Int = readRawInt()
-  def readRawSignedInt(): Int = readRawInt()
-  def readRawFixedInt(): Int = readRawInt()
+  final def readRawInt(): Int = java.lang.Integer.parseInt(readOptionallyQuotedContiguousChars())
+  final def readRawUnsignedInt(): Int = readRawInt()
+  final def readRawSignedInt(): Int = readRawInt()
+  final def readRawFixedInt(): Int = readRawInt()
   
   // Longs
-  def readRawLong(): Long = java.lang.Long.parseLong(readOptionallyQuotedContiguousChars())
-  def readRawUnsignedLong(): Long = readRawLong()
-  def readRawSignedLong(): Long = readRawLong()
-  def readRawFixedLong(): Long = readRawLong()
+  final def readRawLong(): Long = java.lang.Long.parseLong(readOptionallyQuotedContiguousChars())
+  final def readRawUnsignedLong(): Long = readRawLong()
+  final def readRawSignedLong(): Long = readRawLong()
+  final def readRawFixedLong(): Long = readRawLong()
     
   // Objects
-  def readRawObject[T](f: FieldInput => T): T = {
+  final def readRawObject[T](f: FieldInput => T): T = {
     if (nextValueIsNull) return null.asInstanceOf[T]
     
     expectNextChar('{')
@@ -324,7 +328,7 @@ abstract class JSONInput(options: JSONOptions) extends Input {
   }
   
   // Collections
-  def readRawCollection[T](f: CollectionInput => T): T = {
+  final def readRawCollection[T](f: CollectionInput => T): T = {
     if (nextValueIsNull) return null.asInstanceOf[T]
     
     expectNextChar('[')
@@ -338,70 +342,70 @@ abstract class JSONInput(options: JSONOptions) extends Input {
   //
   
   // Basic Types
-  def readNestedBool(): Boolean = {
+  final def readNestedBool(): Boolean = {
     handleCollectionComma()
     readRawBool()
   }
-  
-  def readNestedFloat(): Float = {
+
+  final def readNestedFloat(): Float = {
     handleCollectionComma()
     readRawFloat()
   }
-  
-  def readNestedDouble(): Double = {
+
+  final def readNestedDouble(): Double = {
     handleCollectionComma()
     readRawDouble()
   }
 
-  def readNestedBigInteger(): JavaBigInteger = {
+  final def readNestedBigInteger(): JavaBigInteger = {
     handleCollectionComma()
     readRawBigInteger()
   }
 
-  def readNestedBigDecimal(): JavaBigDecimal = {
+  final def readNestedBigDecimal(): JavaBigDecimal = {
     handleCollectionComma()
     readRawBigDecimal()
   }
-  
-  def readNestedString(): String = {
+
+  final def readNestedString(): String = {
     handleCollectionComma()
     readRawString()
   }
   
   // Bytes
-  def readNestedByteArray(): Array[Byte] = {
+  final def readNestedByteArray(): Array[Byte] = {
     handleCollectionComma()
     readRawByteArray()
   }
   
   // Ints  
-  def readNestedInt(): Int = {
+  final def readNestedInt(): Int = {
     handleCollectionComma()
     readRawInt()
   }
-  
-  def readNestedUnsignedInt(): Int = readNestedInt()
-  def readNestedSignedInt(): Int = readNestedInt()
-  def readNestedFixedInt(): Int = readNestedInt()
+
+  final def readNestedUnsignedInt(): Int = readNestedInt()
+  final def readNestedSignedInt(): Int = readNestedInt()
+  final def readNestedFixedInt(): Int = readNestedInt()
   
   // Longs
-  def readNestedLong(): Long = {
+  final def readNestedLong(): Long = {
     handleCollectionComma()
     readRawLong()
   }
-  
-  def readNestedUnsignedLong(): Long = readNestedLong()
-  def readNestedSignedLong(): Long = readNestedLong()
-  def readNestedFixedLong(): Long = readNestedLong()
+
+  final def readNestedUnsignedLong(): Long = readNestedLong()
+  final def readNestedSignedLong(): Long = readNestedLong()
+  final def readNestedFixedLong(): Long = readNestedLong()
     
   // Objects
-  def readNestedObject[T](f: FieldInput => T): T = {
+  final def readNestedObject[T](f: FieldInput => T): T = {
     handleCollectionComma()
     readRawObject(f)
   }
   
   // Collections
-  def readNestedCollection[T](f: CollectionInput => T): T = {
+  final def readNestedCollection[T](f: CollectionInput => T): T = {
     handleCollectionComma()
     readRawCollection(f)
   }

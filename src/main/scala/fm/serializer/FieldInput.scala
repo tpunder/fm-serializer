@@ -48,4 +48,21 @@ trait FieldInput extends NestedInput {
    * we can call readFieldNumber(...) again.
    */
   def skipUnknownField(): Unit
+
+  /**
+   * This is for reporting that fields for an object were not read and whether or not they had a user-defined default value.
+   */
+  def reportUnsetField[T](number: Int, name: String, hasUserDefinedDefaultValue: Boolean, deserializer: Deserializer[T]): Unit = {
+    // This is really for the ValidatingInput so by default we do nothing
+  }
+
+  /**
+   * The last field name that was read (if any)
+   */
+  def lastFieldName(): String
+
+  /**
+   * The last field number that was read (if any)
+   */
+  def lastFieldNumber(): Int
 }

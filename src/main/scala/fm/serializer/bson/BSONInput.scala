@@ -64,10 +64,15 @@ final class BSONInput(reader: BsonReader) extends Input {
   //
   // FIELD Input
   //
+  private[this] var _lastFieldName: String = ""
+
+  final override def lastFieldName(): String = _lastFieldName
+  final override def lastFieldNumber(): Int = 0 // Use for unknown field reporting - there will be no field number
 
   // Note: copied from JSONInput
   def readFieldNumber(nameToNumMap: Map[String, Int]): Int = {
     val name: String = readFieldName()
+    _lastFieldName = name
 
     if (null == name) return 0
 

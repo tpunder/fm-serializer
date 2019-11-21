@@ -32,4 +32,8 @@ final class TestProtobufStream extends fm.serializer.TestSerializer[Array[Byte]]
     val is = new ByteArrayInputStream(bytes)
     Protobuf.fromInputStream[T](is)
   }
+
+  def makeInput(bytes: Array[Byte]): ProtobufInputStreamInput = {
+    new ProtobufInputStreamInput(new ByteArrayInputStream(bytes), ProtobufOptions.default)
+  }
 }
