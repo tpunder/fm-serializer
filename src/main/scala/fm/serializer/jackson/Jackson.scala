@@ -16,7 +16,7 @@
 package fm.serializer.jackson
 
 import com.fasterxml.jackson.core.{JsonGenerator, JsonParser}
-import fm.json.{JsonNode, JsonNodeGenerator, JsonNodeParser}
+import fm.json.{JsonNode, JsonNodeGenerator, JsonNodeParser, JsonObject}
 import fm.serializer.json.JSONOptions
 import fm.serializer.validation.{Validation, ValidationOptions, ValidationResult}
 import fm.serializer.{Deserializer, Serializer}
@@ -24,6 +24,20 @@ import java.io.{Reader, StringWriter}
 
 object Jackson {
   import fm.json.Json.{jsonFactory, jsonPrettyPrinter}
+
+  def toJsonObject[T](v: T)(implicit serializer: Serializer[T]): JsonObject = {
+    toJsonNode[T](v) match {
+      case obj: JsonObject => obj
+      case other => throw new IllegalArgumentException("Did not serialize to a JsonObject.  Got: "+other)
+    }
+  }
+
+  def toMinimalJsonObject[T](v: T)(implicit serializer: Serializer[T]): JsonObject = {
+    toMinimalJsonNode[T](v) match {
+      case obj: JsonObject => obj
+      case other => throw new IllegalArgumentException("Did not serialize to a JsonObject.  Got: "+other)
+    }
+  }
 
   def toJsonNode[T](v: T)(implicit serializer: Serializer[T]): JsonNode = {
     val generator: JsonNodeGenerator = new JsonNodeGenerator

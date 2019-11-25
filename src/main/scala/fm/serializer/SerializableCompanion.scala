@@ -1,6 +1,6 @@
 package fm.serializer
 
-import fm.json.JsonNode
+import fm.json.{JsonNode, JsonObject}
 import fm.serializer.bson.BSON
 import fm.serializer.jackson.Jackson
 import fm.serializer.json.JSON
@@ -37,11 +37,18 @@ trait SerializableCompanion[A] {
   def validateJson(json: String): ValidationResult = JSON.validate(json)(serializer)
 
   //
-  // Jackson Methods
+  // Jackson JsonNode Methods
   //
   def fromJsonNode(node: JsonNode): A = Jackson.fromJsonNode(node)(serializer)
   def toJsonNode(v: A): JsonNode = Jackson.toJsonNode(v)(serializer)
   def validateJsonNode(node: JsonNode): ValidationResult = Jackson.validate(node)(serializer)
+
+  //
+  // Jackson JsonObject Methods
+  //
+  def fromJsonObject(node: JsonObject): A = Jackson.fromJsonNode(node)(serializer)
+  def toJsonObject(v: A): JsonObject = Jackson.toJsonObject(v)(serializer)
+  def validateJsonObject(node: JsonObject): ValidationResult = Jackson.validate(node)(serializer)
 
   //
   // Protobuf Methods
@@ -82,7 +89,7 @@ trait SerializableInstance[A] { self: A =>
   def toMinimalJSON: String = companion.toMinimalJSON(this)
   def toPrettyJSON: String = companion.toPrettyJSON(this)
 
-  def toJsonNode: JsonNode = companion.toJsonNode(this)
+  def toJsonObject: JsonObject = companion.toJsonObject(this)
 
   def toBytes: Array[Byte] = companion.toBytes(this)
 
