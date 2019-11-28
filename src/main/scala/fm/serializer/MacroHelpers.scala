@@ -30,7 +30,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
   
   private case class ObjectSerializationInfo(objTpe: Type, fields: Vector[FieldImpl]) {
     private val sharedSerializers: Vector[(Type, TermName)] = {
-      fields.filter{ _.serializer == null }.map{ _.tpe }.toSet.toVector.map{ tpe: Type =>
+      fields.filter{ _.serializer === null }.map{ _.tpe }.toSet.toVector.map{ tpe: Type =>
         // If the field type is the same as the object type leave the name empty so we reference this serializer
         val name: TermName = if (tpe =:= objTpe) nme.EMPTY else newTermName(ctx.fresh("shared_ser"))
         (tpe, name)
@@ -40,7 +40,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     val infos: Vector[FieldSerializationInfo] = fields.map{ new FieldSerializationInfo(objTpe, _, sharedSerializers) }
     
     // We filter out empty names (which will later be references to "this")
-    def serializerDeclarations: Vector[ValDef] = sharedSerializers.filterNot{ case (_,name) => name == nme.EMPTY }.map{ case (tpe, name) =>      
+    def serializerDeclarations: Vector[ValDef] = sharedSerializers.filterNot{ case (_,name) => name === nme.EMPTY }.map{ case (tpe, name) =>      
       // Use a more specific type than fm.serializer.Serializer[$tpe] if we know it.
       // We can also use a non-lazy if the implicit is a non-macro
       getImplicit(appliedType(typeOf[Serializer[_]], List(tpe)), withMacrosDisabled = true) match {
@@ -52,7 +52,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     def writes: Vector[Tree] = infos.map{ field: FieldSerializationInfo =>
       val name: TermName = field.serializerTermName
       
-      if (name == nme.EMPTY) q"serializeField(output, ${field.number}, ${field.name}, ${field.fieldAccessor})"
+      if (name === nme.EMPTY) q"serializeField(output, ${field.number}, ${field.name}, ${field.fieldAccessor})"
       else                   q"${name}.serializeField(output, ${field.number}, ${field.name}, ${field.fieldAccessor})"
       
     }
@@ -60,7 +60,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
   
   private case class ObjectDeserializationInfo(objTpe: Type, fields: Vector[FieldImpl]) {
     private val sharedDeserializers: Vector[(Type, TermName)] = {
-      fields.filter{ _.deserializer == null }.map{ _.tpe }.toSet.toVector.map{ tpe: Type =>
+      fields.filter{ _.deserializer === null }.map{ _.tpe }.toSet.toVector.map{ tpe: Type =>
         // If the field type is the same as the object type leave the name empty so we reference this serializer
         val name: TermName = if (tpe =:= objTpe) nme.EMPTY else newTermName(ctx.fresh("shared_deser"))
         (tpe, name)
@@ -69,7 +69,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     
     val infos: Vector[FieldDeserializationInfo] = fields.map{ new FieldDeserializationInfo(objTpe, _, sharedDeserializers) }
     
-    def deserializerDeclarations: Vector[ValDef] = sharedDeserializers.filterNot{ case (_,name) => name == nme.EMPTY }.map{ case (tpe, name) =>
+    def deserializerDeclarations: Vector[ValDef] = sharedDeserializers.filterNot{ case (_,name) => name === nme.EMPTY }.map{ case (tpe, name) =>
       getImplicit(appliedType(typeOf[Deserializer[_]], List(tpe)), withMacrosDisabled = true) match {
         case Some(tree) => q"private[this] val $name: ${tree.tpe} = $tree"
         case None       => q"private[this] lazy val $name: fm.serializer.Deserializer[$tpe] = implicitly[fm.serializer.Deserializer[$tpe]]"
@@ -78,7 +78,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     
     def readCases: Vector[CaseDef] = infos.map{ field: FieldDeserializationInfo =>
       val name: TermName = field.deserializerTermName
-      val deser = if (name == nme.EMPTY) q"deserializeNested(input)" else q"${name}.deserializeNested(input)"
+      val deser = if (name === nme.EMPTY) q"deserializeNested(input)" else q"${name}.deserializeNested(input)"
       
       cq"""${field.number} => 
         ${field.readVarName} = $deser
@@ -90,7 +90,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     def readVars: Vector[ValDef] = infos.map{ _.readVarDef }
     
     def setDefaultValuesForNonSetVariables: Vector[If] = infos.map{ f: FieldDeserializationInfo =>
-      val deserializer = if (f.deserializerTermName == nme.EMPTY) q"null" else q"${f.deserializerTermName}"
+      val deserializer = if (f.deserializerTermName === nme.EMPTY) q"null" else q"${f.deserializerTermName}"
 
       q"""if (!${f.isSetVarName}) {
             ${f.readVarName} = ${f.defaultValue}
@@ -173,7 +173,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
 
     // Use either the shared TermName or create a new one if we are using a custom serializer
     val serializerTermName: TermName = {
-      if (field.serializer == null) sharedSerializers.find{ _._1 =:= field.tpe }.head._2 else newTermName(ctx.fresh(s"ser_${number}_${name}"))
+      if (field.serializer === null) sharedSerializers.find{ _._1 =:= field.tpe }.head._2 else newTermName(ctx.fresh(s"ser_${number}_${name}"))
     }
     
     // There is only a ValDef if we are not using a shared serializer
@@ -194,7 +194,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     
     // Use either the shared TermName or create a new one if we are using a custom deserializer
     val deserializerTermName: TermName = {
-      if (field.deserializer == null) sharedDeserializers.find{ _._1 =:= field.tpe }.head._2 else newTermName(ctx.fresh(s"deser_${number}_${name}"))
+      if (field.deserializer === null) sharedDeserializers.find{ _._1 =:= field.tpe }.head._2 else newTermName(ctx.fresh(s"deser_${number}_${name}"))
     }
     
     // There is only a ValDef if we are not using a shared deserializer
@@ -218,7 +218,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
 
     /** The default (e.g. foo: Int = 123) or un-initialized value (e.g. 0 for Int) to use for this field  */
     def defaultValue: Tree = Option(field.defaultValue).getOrElse{
-      if (deserializerTermName == nme.EMPTY) q"defaultValue" else q"${deserializerTermName}.defaultValue"
+      if (deserializerTermName === nme.EMPTY) q"defaultValue" else q"${deserializerTermName}.defaultValue"
     }
   }
 
@@ -267,10 +267,10 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     }
     
     private def combine(a: Int, b: Int): Int = {
-      if (-1 == a) b
-      else if (-1 == b) a
+      if (-1 === a) b
+      else if (-1 === b) a
       else {
-        require(a == b, s"Values don't match: $a != $b")
+        require(a === b, s"Values don't match: $a != $b")
         a
       }
     }
@@ -283,7 +283,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     private def combine(a: Type, b: Type): Type = combine(Option(a), Option(b))
     
     private def combine[T <: AnyRef](a: Option[T], b: Option[T]): T = {
-      require(a == b || a.isDefined ^ b.isDefined, s"Values are different: $a != $b")
+      require(a === b || a.isDefined ^ b.isDefined, s"Values are different: $a != $b")
       (a orElse b).getOrElse{ null.asInstanceOf[T] }
     }
   }
@@ -295,12 +295,12 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     tmp.foreach{ f: FieldImpl => require(null != f.name && f.name.length > 0, s"Name must be non-blank: $f") }
     
     def requireUnique[T](label: String, vals: Seq[T]): Unit = {
-      require(vals.size == vals.toSet.size, s"$label is not unique!  $tmp")
+      require(vals.size === vals.toSet.size, s"$label is not unique!  $tmp")
     }
     
     requireUnique("number", tmp.map{ _.number })
     requireUnique("name", tmp.map{ _.name })
-    requireUnique("constructorIdx", tmp.map{ _.constructorIdx }.filterNot{ _ == -1 })
+    requireUnique("constructorIdx", tmp.map{ _.constructorIdx }.filterNot{ _ === -1 })
     
     tmp
   }
@@ -310,7 +310,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
       if (f.tpe != null) f else {
         require(f.getter != null, "Getter is null, not sure how to determine type")
         val method: MethodSymbol = noArgsMethod(objTpe, newTermName(f.getter))
-        require(method.paramss.isEmpty || method.paramss == List(List()), s"Getter should have an empty param list.  Tpe: ${objTpe}  Getter: ${f.getter}  Paramss: ${method.paramss}")
+        require(method.paramss.isEmpty || method.paramss === List(List()), s"Getter should have an empty param list.  Tpe: ${objTpe}  Getter: ${f.getter}  Paramss: ${method.paramss}")
         
         val returnType: Type = resolveType(objTpe, method.returnType)
         require(!(returnType =:= typeOf[Unit]), s"Getter return type should not be Unit.  Tpe: ${objTpe}  Getter: ${f.getter}  Paramss: ${returnType}")
@@ -429,7 +429,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
       
       // Populate additional missing fields from FieldImpl
       val missingFields: FieldImpl = {
-        val n: String = if (spec.name == null || spec.name == "") name else null
+        val n: String = if (spec.name === null || spec.name === "") name else null
         FieldImpl(name = n)
       }
       
@@ -475,7 +475,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
   
   // Combine compatible FieldImpl records by number and name
   private def combineFieldImpl(all: Vector[FieldImpl]): Vector[FieldImpl] = {
-    combineFieldImplUsing(combineFieldImplUsing(all, _.number, (num: Int) => num == -1), _.name, (name: String) => name == null)
+    combineFieldImplUsing(combineFieldImplUsing(all, _.number, (num: Int) => num === -1), _.name, (name: String) => name === null)
   }
   
   private def combineFieldImplUsing[T](all: Vector[FieldImpl], groupBy: FieldImpl => T, ignore: T => Boolean): Vector[FieldImpl] = {
@@ -830,7 +830,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
         null
       }
     
-    if (tree == null) return null
+    if (tree === null) return null
     
     // See notes in checkCollectionSerializer for why we use this pattern
     q"""
@@ -865,7 +865,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
       null
     }
     
-    if (tree == null) return null
+    if (tree === null) return null
       
     // See notes in checkCollectionSerializer for why we use this pattern
     q"""
@@ -1223,7 +1223,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
   def getSingleTypeParamAsSeenFrom(tpe: Type, baseType: Type): Option[Type] = {
     if (tpe <:< baseType) {
       val args = typeArgsFor(tpe.baseType(baseType.typeSymbol))
-      if (args.size == 1) Some(args.head) else None
+      if (args.size === 1) Some(args.head) else None
     } else {
       None
     }
@@ -1255,7 +1255,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
   def resolveType(objTpe: Type, tpe: Type): Type = {
     val realTypes: List[Type] = typeArgsFor(objTpe)
     val genericTypes: List[Symbol] = objTpe.typeSymbol.asClass.typeParams
-    require(realTypes.size == genericTypes.size, s"Real Types: $realTypes  Generic Types: $genericTypes")
+    require(realTypes.size === genericTypes.size, s"Real Types: $realTypes  Generic Types: $genericTypes")
     
     val lookupMap: Map[Symbol, Type] = (genericTypes zip realTypes).toMap
     
@@ -1336,7 +1336,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
   
   def getConstructorWithSignature(tpe: Type, params: Seq[Type]): Option[MethodSymbol] = getMethodsForType(tpe, nme.CONSTRUCTOR).find { method: MethodSymbol =>
     method.paramss match {
-      case List(p) if p.size == params.size => (p.map{ _.typeSignature } zip params).forall{ case (ctorParam: Type, param: Type) => param <:< resolveType(tpe, ctorParam) }
+      case List(p) if p.size === params.size => (p.map{ _.typeSignature } zip params).forall{ case (ctorParam: Type, param: Type) => param <:< resolveType(tpe, ctorParam) }
       case _       => false
     }
   }
@@ -1422,14 +1422,14 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     log(s"  Setters: $setters")
     
     def findGetter(field: TermSymbol): Option[MethodSymbol] = getters.find{ m: MethodSymbol => Seq("get"+field.name.decoded.toLowerCase.trim, "is"+field.name.decoded.toLowerCase.trim).contains(m.name.decoded.toLowerCase.trim) }
-    def findSetter(field: TermSymbol): Option[MethodSymbol] = setters.find{ _.name.decoded.toLowerCase.trim == "set"+field.name.decoded.toLowerCase.trim }
+    def findSetter(field: TermSymbol): Option[MethodSymbol] = setters.find{ _.name.decoded.toLowerCase.trim === "set"+field.name.decoded.toLowerCase.trim }
     
     // We need to match up fields/getters/setters
     fields.filterNot{ field: TermSymbol =>
       //
       // HACK TO GET THIS WORKING WITH THE JVM-SERIALIZERS BENCHMARK
       //
-      //val isTransient: Boolean = hasTransientAnnotation(field) || field.name.decoded.trim == "hasBitrate"
+      //val isTransient: Boolean = hasTransientAnnotation(field) || field.name.decoded.trim === "hasBitrate"
       //
       
       val isTransient: Boolean = hasTransientAnnotation(field)
