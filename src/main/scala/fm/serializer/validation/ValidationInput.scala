@@ -52,7 +52,7 @@ final class ValidationInput(self: Input, options: ValidationOptions) extends Inp
     var report: Boolean = !options.ignoreUnsetFields
 
     report &&= (!hasUserDefinedDefaultValue || options.reportUnsetFieldsWithDefaultValues)
-    report &&= (options.reportUnsetOptionFields || deserializer.defaultValue != None)
+    report &&= (options.reportUnsetOptionFields || (deserializer =!= null && deserializer.defaultValue != None))
 
     if (report) errorsBuilder += ValidationError.MissingField(path, number, name)
 

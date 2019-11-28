@@ -51,6 +51,11 @@ trait FieldInput extends NestedInput {
 
   /**
    * This is for reporting that fields for an object were not read and whether or not they had a user-defined default value.
+   * @param number The field number
+   * @param name The field name.  Note: This can be null.
+   * @param hasUserDefinedDefaultValue Whether or not there was a user defined default value (e.g. val foo: Int = 123)
+   * @param deserializer The deserializer for the field.  Note: This can be null.
+   * @tparam T
    */
   def reportUnsetField[T](number: Int, name: String, hasUserDefinedDefaultValue: Boolean, deserializer: Deserializer[T]): Unit = {
     // This is really for the ValidatingInput so by default we do nothing
