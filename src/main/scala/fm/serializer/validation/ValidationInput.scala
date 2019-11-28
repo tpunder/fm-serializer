@@ -145,7 +145,7 @@ final class ValidationInput(self: Input, options: ValidationOptions) extends Inp
       f
     } catch {
       case ex: Exception =>
-        errorsBuilder += ValidationError.ObjectError(path, fieldNumber, fieldName)(ex.getMessage)
+        errorsBuilder += ValidationError.ObjectError(path, fieldNumber, fieldName)(ex)
         throw ValidationInput.AbortValidationException
     } finally {
       path = prevPath
@@ -159,7 +159,7 @@ final class ValidationInput(self: Input, options: ValidationOptions) extends Inp
       f
     } catch {
       case ex: Exception =>
-        errorsBuilder += ValidationError.CollectionError(path, fieldNumber, fieldName)(ex.getMessage)
+        errorsBuilder += ValidationError.CollectionError(path, fieldNumber, fieldName)(ex)
         throw ValidationInput.AbortValidationException
     }
   }
@@ -169,7 +169,7 @@ final class ValidationInput(self: Input, options: ValidationOptions) extends Inp
       f
     } catch {
       case ex: Exception =>
-        errorsBuilder += ValidationError.PrimitiveError(path, fieldNumber, fieldName)(ex.getMessage)
+        errorsBuilder += ValidationError.PrimitiveError(path, fieldNumber, fieldName)(ex)
         throw ValidationInput.AbortValidationException
     }
   }

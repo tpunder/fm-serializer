@@ -13,11 +13,19 @@ object ValidationError {
     override protected def errorMessage: String = s"Unknown Field '$fieldNameOrNumber'"
   }
 
-  final case class ObjectError(path: String, fieldNumber: Int, fieldName: String)(protected val errorMessage: String) extends ParseError
-  final case class CollectionError(path: String, fieldNumber: Int, fieldName: String)(protected val errorMessage: String) extends ParseError
-  final case class PrimitiveError(path: String, fieldNumber: Int, fieldName: String)(protected val errorMessage: String) extends ParseError
+  final case class ObjectError(path: String, fieldNumber: Int, fieldName: String)(protected val exception: Exception) extends ParseError
+  final case class CollectionError(path: String, fieldNumber: Int, fieldName: String)(protected val exception: Exception) extends ParseError
+  final case class PrimitiveError(path: String, fieldNumber: Int, fieldName: String)(protected val exception: Exception) extends ParseError
 
-  sealed abstract class ParseError extends ValidationError
+  sealed abstract class ParseError extends ValidationError {
+    protected def exception: Exception
+
+    protected def errorMessage: String = {
+      if (exception === null) return ""
+      val msg: String = exception.getMessage
+      if (msg.isNotNullOrBlank) msg else exception.getClass.getSimpleName
+    }
+  }
 }
 
 sealed abstract class ValidationError {

@@ -262,7 +262,7 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers with AppendedClues {
   test("Validation - Wrong Type") {
     checkValidation(
       obj = ValidationWrongType("string", "not int"),
-      expected = ValidationResult.Failure(Vector(ValidationError.PrimitiveError("", 2, "int")("")))
+      expected = ValidationResult.Failure(Vector(ValidationError.PrimitiveError("", 2, "int")(new IllegalArgumentException(""))))
     )
   }
 
