@@ -62,26 +62,26 @@ object JSON {
   }
   
   def fromJSON[@specialized T](json: String)(implicit deserializer: Deserializer[T]): T = {
-    fromJSON(json, JSONOptions.default)
+    fromJSON(json, JSONDeserializerOptions.default)
   }
   
-  def fromJSON[@specialized T](json: String, options: JSONOptions)(implicit deserializer: Deserializer[T]): T = {
+  def fromJSON[@specialized T](json: String, options: JSONDeserializerOptions)(implicit deserializer: Deserializer[T]): T = {
     deserializer.deserializeRaw(new JSONCharSequenceInput(json, options))
   }
   
   def fromBytes[@specialized T](bytes: Array[Byte])(implicit deserializer: Deserializer[T]): T = {
-    fromBytes(bytes, JSONOptions.default)
+    fromBytes(bytes, JSONDeserializerOptions.default)
   }
   
-  def fromBytes[@specialized T](bytes: Array[Byte], options: JSONOptions)(implicit deserializer: Deserializer[T]): T = {
+  def fromBytes[@specialized T](bytes: Array[Byte], options: JSONDeserializerOptions)(implicit deserializer: Deserializer[T]): T = {
     deserializer.deserializeRaw(new JSONByteArrayInput(bytes, options))
   } 
   
   def fromReader[@specialized T](reader: Reader)(implicit deserializer: Deserializer[T]): T = {
-    fromReader(reader, JSONOptions.default)
+    fromReader(reader, JSONDeserializerOptions.default)
   }
   
-  def fromReader[@specialized T](reader: Reader, options: JSONOptions)(implicit deserializer: Deserializer[T]): T = {
+  def fromReader[@specialized T](reader: Reader, options: JSONDeserializerOptions)(implicit deserializer: Deserializer[T]): T = {
     deserializer.deserializeRaw(new JSONReaderInput(reader, options))
   }
 
@@ -90,6 +90,6 @@ object JSON {
   }
 
   def validate[T](json: String, options: ValidationOptions)(implicit deserializer: Deserializer[T]): ValidationResult = {
-    Validation.validate(new JSONCharSequenceInput(json, JSONOptions.default), options)
+    Validation.validate(new JSONCharSequenceInput(json, JSONDeserializerOptions.default), options)
   }
 }

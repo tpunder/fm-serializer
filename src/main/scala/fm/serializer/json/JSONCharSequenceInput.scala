@@ -15,7 +15,7 @@
  */
 package fm.serializer.json
 
-final class JSONCharSequenceInput(chars: CharSequence, options: JSONOptions) extends JSONInput(options) {
+final class JSONCharSequenceInput(chars: CharSequence, options: JSONDeserializerOptions) extends JSONInput(options) {
   private[this] val length: Int = chars.length
   private[this] var idx: Int = 0
   

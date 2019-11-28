@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Frugal Mechanic (http://frugalmechanic.com)
+ * Copyright 2019 Frugal Mechanic (http://frugalmechanic.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,6 @@
  */
 package fm.serializer.json
 
-object JSONOptions {
-  val default: JSONOptions = JSONOptions()
-  val internStrings: JSONOptions = JSONOptions(internStrings = true)
-}
+class JSONSerializerOptions {
 
-/**
- * @param internStrings Call String.intern() on any strings read
- */
-final case class JSONOptions(
-  internStrings: Boolean = false
-  // TODO: Add the JSONOutput options into here and maybe split between serializer/deserialier options
-) {
-  
 }

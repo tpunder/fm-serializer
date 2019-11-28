@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Frugal Mechanic (http://frugalmechanic.com)
+ * Copyright 2019 Frugal Mechanic (http://frugalmechanic.com)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,14 @@
  */
 package fm.serializer.json
 
-import java.io.Reader
-
-final class JSONReaderInput(reader: Reader, options: JSONDeserializerOptions) extends JSONInput(options) {
-  /** Peek at the next character without consuming it */
-  protected var peek: Int = reader.read()
-  
-  /** Return peek and advance to the next character */
-  protected def next: Char = {
-    if (peek == -1) throw new IllegalArgumentException("EOF")
-    val ch: Char = peek.toChar
-    peek = reader.read()
-    ch
-  }
+object JSONDeserializerOptions {
+  val default: JSONDeserializerOptions = JSONDeserializerOptions()
+  val internStrings: JSONDeserializerOptions = JSONDeserializerOptions(internStrings = true)
 }
+
+/**
+ * @param internStrings Call String.intern() on any strings read
+ */
+final case class JSONDeserializerOptions(
+  internStrings: Boolean = false
+)

@@ -17,14 +17,14 @@ package fm.serializer.jackson
 
 import com.fasterxml.jackson.core.{JsonParser, JsonToken}
 import fm.json._
-import fm.serializer.json.{JSONInput, JSONOptions}
+import fm.serializer.json.{JSONInput, JSONDeserializerOptions}
 import fm.serializer.{CollectionInput, FieldInput, Input}
 import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
 
 /**
  * An Input implementation on top of Jackson's JsonParser
  */
-final class JsonParserInput(parser: JsonParser, options: JSONOptions) extends Input {
+final class JsonParserInput(parser: JsonParser, options: JSONDeserializerOptions) extends Input {
   override def allowStringMap: Boolean = true
 
   /**

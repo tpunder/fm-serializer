@@ -37,7 +37,7 @@ object JSONInput {
   }
 }
 
-abstract class JSONInput(options: JSONOptions) extends Input {
+abstract class JSONInput(options: JSONDeserializerOptions) extends Input {
   final def allowStringMap: Boolean = true
   
   private[this] var inObject: Boolean = false

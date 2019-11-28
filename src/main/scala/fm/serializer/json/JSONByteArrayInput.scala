@@ -31,7 +31,7 @@ object JSONByteArrayInput {
   }
 }
 
-final class JSONByteArrayInput(bytes: Array[Byte], options: JSONOptions) extends JSONInput(options) {
+final class JSONByteArrayInput(bytes: Array[Byte], options: JSONDeserializerOptions) extends JSONInput(options) {
   private[this] val length: Int = bytes.length
   private[this] var idx: Int = 0
 
