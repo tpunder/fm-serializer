@@ -20,7 +20,7 @@ import fm.serializer.validation.{Validation, ValidationError, ValidationResult}
 import java.io.File
 import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
 import java.nio.charset.StandardCharsets.UTF_8
-import java.time.LocalDate
+import java.time.{LocalDate, LocalDateTime}
 import java.util.{Calendar, Date}
 import org.bson.types.ObjectId
 import org.scalatest.{AppendedClues, FunSuite, Matchers}
@@ -110,7 +110,9 @@ object TestSerializer {
     calendarNull: Calendar = null,
     dateNull: Date = null,
     localDate: LocalDate = LocalDate.now,
+    localDateTime: LocalDateTime = LocalDateTime.now,
     localDateNull: LocalDate = null,
+    localDateTimeNull: LocalDateTime = null,
     bsonTypes: BsonTypes = BsonTypes(),
     fmCommonTypes: FMCommonTypes = FMCommonTypes(),
     supplementaryCharacters: SupplementaryCharacters = SupplementaryCharacters(),
