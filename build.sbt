@@ -33,7 +33,7 @@ libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
 
 // SCALA Libraries
 libraryDependencies ++= Seq(
-  "com.frugalmechanic" %% "fm-common" % "0.42.0",
+  "com.frugalmechanic" %% "fm-common" % "0.44.0",
   "com.frugalmechanic" %% "fm-json" % "0.1.0"
 )
 
