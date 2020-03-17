@@ -20,13 +20,7 @@ import fm.serializer.FMByteArrayOutputStream
 import fm.serializer.base64.Base64
 import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
 
-final class JSONOutput(
-  outputNulls: Boolean = true,
-  outputFalse: Boolean = true,
-  outputZeros: Boolean = true,
-  prettyFormat: Boolean = false,
-  indent: String = "  "
-) extends Output {
+final class JSONOutput(options: JSONSerializerOptions) extends Output {
   def allowStringMap: Boolean = true
   
   private[this] val out: FMByteArrayOutputStream = new FMByteArrayOutputStream()
@@ -45,7 +39,7 @@ final class JSONOutput(
     if (level > 0) {
       var i: Int = 0
       while (i < level) {
-        out.write(indent)
+        out.write(options.indent)
         i += 1
       }
     }
@@ -58,7 +52,7 @@ final class JSONOutput(
       if (isFirst) isFirst = false
       else out.write(',')
       
-      if (prettyFormat) doIndent()
+      if (options.prettyFormat) doIndent()
     }
   }
   
@@ -206,7 +200,7 @@ final class JSONOutput(
       level += 1
       val count: Int = withCommas{ f(this, obj) }
       level -= 1
-      if (prettyFormat) {
+      if (options.prettyFormat) {
         if (count > 0) doIndent() else out.write(' ')
       }
       out.write('}')
@@ -222,7 +216,7 @@ final class JSONOutput(
       level += 1
       val count: Int = withCommas{ f(this, col) }
       level -= 1
-      if (prettyFormat) {
+      if (options.prettyFormat) {
         if (count > 0) doIndent() else out.write(' ')
       }
       out.write(']')
@@ -306,7 +300,7 @@ final class JSONOutput(
   
   // Basic Types
   def writeFieldBool(number: Int, name: String, value: Boolean): Unit = {
-    if (outputFalse || value) {
+    if (options.outputFalse || value) {
       doComma()
       writeFieldName(name)
       writeRawBool(value)
@@ -314,7 +308,7 @@ final class JSONOutput(
   }
   
   def writeFieldFloat(number: Int, name: String, value: Float): Unit = {
-    if (outputZeros || value != 0f) {
+    if (options.outputZeros || value != 0f) {
       doComma()
       writeFieldName(name)
       writeRawFloat(value)
@@ -322,7 +316,7 @@ final class JSONOutput(
   }
   
   def writeFieldDouble(number: Int, name: String, value: Double): Unit = {
-    if (outputZeros || value != 0d) {
+    if (options.outputZeros || value != 0d) {
       doComma()
       writeFieldName(name)
       writeRawDouble(value)
@@ -330,7 +324,7 @@ final class JSONOutput(
   }
 
   def writeFieldBigInteger(number: Int, name: String, value: JavaBigInteger): Unit = {
-    if (null != value || outputNulls) {
+    if (null != value || options.outputNulls) {
       doComma()
       writeFieldName(name)
       writeRawBigInteger(value)
@@ -338,7 +332,7 @@ final class JSONOutput(
   }
 
   def writeFieldBigDecimal(number: Int, name: String, value: JavaBigDecimal): Unit = {
-    if (null != value || outputNulls) {
+    if (null != value || options.outputNulls) {
       doComma()
       writeFieldName(name)
       writeRawBigDecimal(value)
@@ -346,7 +340,7 @@ final class JSONOutput(
   }
   
   def writeFieldString(number: Int, name: String, value: String): Unit = {
-    if (null != value || outputNulls) {
+    if (null != value || options.outputNulls) {
       doComma()
       writeFieldName(name)
       writeRawString(value)
@@ -355,7 +349,7 @@ final class JSONOutput(
   
   // Bytes
   def writeFieldByteArray(number: Int, name: String, value: Array[Byte]): Unit = {
-    if (null != value || outputNulls) {
+    if (null != value || options.outputNulls) {
       doComma()
       writeFieldName(name)
       writeRawByteArray(value)
@@ -364,7 +358,7 @@ final class JSONOutput(
   
   // Ints  
   def writeFieldInt(number: Int, name: String, value: Int): Unit = {
-    if (outputZeros || value != 0) {
+    if (options.outputZeros || value != 0) {
       doComma()
       writeFieldName(name)
       writeRawInt(value)
@@ -377,7 +371,7 @@ final class JSONOutput(
   
   // Longs
   def writeFieldLong(number: Int, name: String, value: Long): Unit = {
-    if (outputZeros || value != 0L) {
+    if (options.outputZeros || value != 0L) {
       doComma()
       writeFieldName(name)
       writeRawLong(value)
@@ -390,7 +384,7 @@ final class JSONOutput(
   
   // Objects
   def writeFieldObject[T](number: Int, name: String, obj: T)(f: (FieldOutput, T) => Unit): Unit = {
-    if (null != obj || outputNulls) {
+    if (null != obj || options.outputNulls) {
       doComma()
       writeFieldName(name)
       writeRawObject(obj)(f)
@@ -399,7 +393,7 @@ final class JSONOutput(
   
   // Collections
   def writeFieldCollection[T](number: Int, name: String, col: T)(f: (NestedOutput, T) => Unit): Unit = {
-    if (null != col || outputNulls) {
+    if (null != col || options.outputNulls) {
       doComma()
       writeFieldName(name)
       writeRawCollection(col)(f)
@@ -407,7 +401,7 @@ final class JSONOutput(
   }
   
   def writeFieldNull(number: Int, name: String): Unit = {
-    if (outputNulls) {
+    if (options.outputNulls) {
       doComma()
       writeFieldName(name)
       writeNull()
@@ -417,7 +411,7 @@ final class JSONOutput(
   private def writeFieldName(name: String): Unit = {
     writeRawString(name)
     out.write(':')
-    if (prettyFormat) out.write(' ')
+    if (options.prettyFormat) out.write(' ')
   }
   
   private def writeNull(): Unit = {

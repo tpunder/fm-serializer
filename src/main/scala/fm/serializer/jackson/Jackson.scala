@@ -17,7 +17,7 @@ package fm.serializer.jackson
 
 import com.fasterxml.jackson.core.{JsonGenerator, JsonParser}
 import fm.json.{JsonNode, JsonNodeGenerator, JsonNodeParser, JsonObject}
-import fm.serializer.json.JSONDeserializerOptions
+import fm.serializer.json.{JSONDeserializerOptions, JSONSerializerOptions}
 import fm.serializer.validation.{Validation, ValidationOptions, ValidationResult}
 import fm.serializer.{Deserializer, Serializer}
 import java.io.{Reader, StringWriter}
@@ -25,29 +25,40 @@ import java.io.{Reader, StringWriter}
 object Jackson {
   import fm.json.Json.{jsonFactory, jsonPrettyPrinter}
 
-  def toJsonObject[T](v: T)(implicit serializer: Serializer[T]): JsonObject = {
-    toJsonNode[T](v) match {
-      case obj: JsonObject => obj
-      case other => throw new IllegalArgumentException("Did not serialize to a JsonObject.  Got: "+other)
-    }
-  }
-
   def toMinimalJsonObject[T](v: T)(implicit serializer: Serializer[T]): JsonObject = {
-    toMinimalJsonNode[T](v) match {
+    toJsonObject(v, JSONSerializerOptions.minimal)
+  }
+
+  def toJsonObjectWithoutNulls[T](v: T)(implicit serializer: Serializer[T]): JsonObject = {
+    toJsonObject(v, JSONSerializerOptions.defaultWithoutNulls)
+  }
+
+  def toJsonObject[T](v: T)(implicit serializer: Serializer[T]): JsonObject = {
+    toJsonObject(v, JSONSerializerOptions.default)
+  }
+
+  def toJsonObject[T](v: T, options: JSONSerializerOptions)(implicit serializer: Serializer[T]): JsonObject = {
+    toJsonNode[T](v, options) match {
       case obj: JsonObject => obj
       case other => throw new IllegalArgumentException("Did not serialize to a JsonObject.  Got: "+other)
     }
-  }
-
-  def toJsonNode[T](v: T)(implicit serializer: Serializer[T]): JsonNode = {
-    val generator: JsonNodeGenerator = new JsonNodeGenerator
-    write(v, new JsonGeneratorOutput(generator))
-    generator.result
   }
 
   def toMinimalJsonNode[T](v: T)(implicit serializer: Serializer[T]): JsonNode = {
+    toJsonNode(v, JSONSerializerOptions.minimal)
+  }
+
+  def toJsonNodeWithoutNulls[T](v: T)(implicit serializer: Serializer[T]): JsonNode = {
+    toJsonNode(v, JSONSerializerOptions.defaultWithoutNulls)
+  }
+
+  def toJsonNode[T](v: T)(implicit serializer: Serializer[T]): JsonNode = {
+    toJsonNode(v, JSONSerializerOptions.default)
+  }
+
+  def toJsonNode[T](v: T, options: JSONSerializerOptions)(implicit serializer: Serializer[T]): JsonNode = {
     val generator: JsonNodeGenerator = new JsonNodeGenerator
-    write(v, new JsonGeneratorOutput(generator, outputNulls = false, outputFalse = false, outputZeros = false))
+    write(v, new JsonGeneratorOutput(generator, options))
     generator.result
   }
 
@@ -60,27 +71,31 @@ object Jackson {
     read(new JsonParserInput(parser, options))
   }
 
-  def toJSON[@specialized T](v: T)(implicit serializer: Serializer[T]): String = {
-    val sw: StringWriter = new StringWriter()
-    val generator: JsonGenerator = jsonFactory.createGenerator(sw)
-    write(v, new JsonGeneratorOutput(generator))
-    generator.close()
-    sw.toString
-  }
-
   def toMinimalJSON[@specialized T](v: T)(implicit serializer: Serializer[T]): String = {
-    val sw: StringWriter = new StringWriter()
-    val generator: JsonGenerator = jsonFactory.createGenerator(sw)
-    write(v, new JsonGeneratorOutput(generator, outputNulls = false, outputFalse = false, outputZeros = false))
-    generator.close()
-    sw.toString
+    toJSON(v, JSONSerializerOptions.minimal)
   }
 
   def toPrettyJSON[@specialized T](v: T)(implicit serializer: Serializer[T]): String = {
+    toJSON(v, JSONSerializerOptions.pretty)
+  }
+
+  def toPrettyJSONWithoutNulls[@specialized T](v: T)(implicit serializer: Serializer[T]): String = {
+    toJSON(v, JSONSerializerOptions.prettyWithoutNulls)
+  }
+
+  def toJSON[@specialized T](v: T)(implicit serializer: Serializer[T]): String = {
+    toJSON(v, JSONSerializerOptions.default)
+  }
+
+  def toJSONWithoutNulls[@specialized T](v: T)(implicit serializer: Serializer[T]): String = {
+    toJSON(v, JSONSerializerOptions.defaultWithoutNulls)
+  }
+
+  def toJSON[@specialized T](v: T, options: JSONSerializerOptions)(implicit serializer: Serializer[T]): String = {
     val sw: StringWriter = new StringWriter()
     val generator: JsonGenerator = jsonFactory.createGenerator(sw)
-    generator.setPrettyPrinter(jsonPrettyPrinter)
-    write(v, new JsonGeneratorOutput(generator))
+    if (options.prettyFormat) generator.setPrettyPrinter(jsonPrettyPrinter)
+    write(v, new JsonGeneratorOutput(generator, options))
     generator.close()
     sw.toString
   }

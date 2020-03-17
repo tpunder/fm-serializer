@@ -16,19 +16,15 @@
 package fm.serializer.jackson
 
 import com.fasterxml.jackson.core.JsonGenerator
+import fm.serializer.json.JSONSerializerOptions
 import fm.serializer.{FieldOutput, NestedOutput, Output}
 import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
 
 /**
  * An Output implementation on top of Jackson's JsonGenerator
  */
-final class JsonGeneratorOutput(
-  generator: JsonGenerator,
-  outputNulls: Boolean,
-  outputFalse: Boolean,
-  outputZeros: Boolean
-) extends Output {
-  def this(generator: JsonGenerator) = this(generator, true, true, true)
+final class JsonGeneratorOutput(generator: JsonGenerator, options: JSONSerializerOptions) extends Output {
+  def this(generator: JsonGenerator) = this(generator, JSONSerializerOptions.default)
 
   override def allowStringMap: Boolean = true
 
@@ -37,56 +33,56 @@ final class JsonGeneratorOutput(
   }
 
   override def writeFieldBool(number: Int, name: String, value: Boolean): Unit = {
-    if (outputFalse || value) {
+    if (options.outputFalse || value) {
       writeFieldName(name)
       writeRawBool(value)
     }
   }
 
   override def writeFieldFloat(number: Int, name: String, value: Float): Unit = {
-    if (outputZeros || value != 0f) {
+    if (options.outputZeros || value != 0f) {
       writeFieldName(name)
       writeRawFloat(value)
     }
   }
 
   override def writeFieldDouble(number: Int, name: String, value: Double): Unit = {
-    if (outputZeros || value != 0d) {
+    if (options.outputZeros || value != 0d) {
       writeFieldName(name)
       writeRawDouble(value)
     }
   }
 
   override def writeFieldBigInteger(number: Int, name: String, value: JavaBigInteger): Unit = {
-    if (null != value || outputNulls) {
+    if (null != value || options.outputNulls) {
       writeFieldName(name)
       writeRawBigInteger(value)
     }
   }
 
   override def writeFieldBigDecimal(number: Int, name: String, value: JavaBigDecimal): Unit = {
-    if (null != value || outputNulls) {
+    if (null != value || options.outputNulls) {
       writeFieldName(name)
       writeRawBigDecimal(value)
     }
   }
 
   override def writeFieldString(number: Int, name: String, value: String): Unit = {
-    if (null != value || outputNulls) {
+    if (null != value || options.outputNulls) {
       writeFieldName(name)
       writeRawString(value)
     }
   }
 
   override def writeFieldByteArray(number: Int, name: String, value: Array[Byte]): Unit = {
-    if (null != value || outputNulls) {
+    if (null != value || options.outputNulls) {
       writeFieldName(name)
       writeRawByteArray(value)
     }
   }
 
   override def writeFieldInt(number: Int, name: String, value: Int): Unit = {
-    if (outputZeros || value != 0) {
+    if (options.outputZeros || value != 0) {
       writeFieldName(name)
       writeRawInt(value)
     }
@@ -97,7 +93,7 @@ final class JsonGeneratorOutput(
   override def writeFieldFixedInt(number: Int, name: String, value: Int): Unit = writeFieldInt(number, name, value)
 
   override def writeFieldLong(number: Int, name: String, value: Long): Unit = {
-    if (outputZeros || value != 0L) {
+    if (options.outputZeros || value != 0L) {
       writeFieldName(name)
       writeRawLong(value)
     }
@@ -108,21 +104,21 @@ final class JsonGeneratorOutput(
   override def writeFieldFixedLong(number: Int, name: String, value: Long): Unit = writeFieldLong(number, name, value)
 
   override def writeFieldObject[T](number: Int, name: String, obj: T)(f: (FieldOutput, T) => Unit): Unit = {
-    if (null != obj || outputNulls) {
+    if (null != obj || options.outputNulls) {
       writeFieldName(name)
       writeRawObject(obj)(f)
     }
   }
 
   override def writeFieldCollection[T](number: Int, name: String, col: T)(f: (NestedOutput, T) => Unit): Unit = {
-    if (null != col || outputNulls) {
+    if (null != col || options.outputNulls) {
       writeFieldName(name)
       writeRawCollection(col)(f)
     }
   }
 
   override def writeFieldNull(number: Int, name: String): Unit = {
-    if (outputNulls) {
+    if (options.outputNulls) {
       writeFieldName(name)
       writeNull()
     }

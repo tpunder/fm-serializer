@@ -30,8 +30,10 @@ trait SerializableCompanion[A] {
   // JSON Methods
   //
   def toJSON(v: A): String = JSON.toJSON(v)(serializer)
+  def toJSONWithoutNulls(v: A): String = JSON.toJSONWithoutNulls(v)(serializer)
   def toMinimalJSON(v: A): String = JSON.toMinimalJSON(v)(serializer)
   def toPrettyJSON(v: A): String = JSON.toPrettyJSON(v)(serializer)
+  def toPrettyJSONWithoutNulls(v: A): String = JSON.toPrettyJSONWithoutNulls(v)(serializer)
   
   def fromJSON(json: String): A = JSON.fromJSON(json)(serializer)
   def validateJson(json: String): ValidationResult = JSON.validate(json)(serializer)
@@ -41,6 +43,7 @@ trait SerializableCompanion[A] {
   //
   def fromJsonNode(node: JsonNode): A = Jackson.fromJsonNode(node)(serializer)
   def toJsonNode(v: A): JsonNode = Jackson.toJsonNode(v)(serializer)
+  def toJsonNodeWithoutNulls(v: A): JsonNode = Jackson.toJsonNodeWithoutNulls(v)(serializer)
   def validateJsonNode(node: JsonNode): ValidationResult = Jackson.validate(node)(serializer)
 
   //
@@ -48,6 +51,7 @@ trait SerializableCompanion[A] {
   //
   def fromJsonObject(node: JsonObject): A = Jackson.fromJsonNode(node)(serializer)
   def toJsonObject(v: A): JsonObject = Jackson.toJsonObject(v)(serializer)
+  def toJsonObjectWithoutNulls(v: A): JsonObject = Jackson.toJsonObjectWithoutNulls(v)(serializer)
   def validateJsonObject(node: JsonObject): ValidationResult = Jackson.validate(node)(serializer)
 
   //
@@ -86,10 +90,13 @@ trait SerializableInstance[A] { self: A =>
   protected def companion: SerializableCompanion[A]
   
   def toJSON: String = companion.toJSON(this)
+  def toJSONWithoutNulls: String = companion.toJSONWithoutNulls(this)
   def toMinimalJSON: String = companion.toMinimalJSON(this)
   def toPrettyJSON: String = companion.toPrettyJSON(this)
+  def toPrettyJSONWithoutNulls: String = companion.toPrettyJSONWithoutNulls(this)
 
   def toJsonObject: JsonObject = companion.toJsonObject(this)
+  def toJsonObjectWithoutNulls: JsonObject = companion.toJsonObjectWithoutNulls(this)
 
   def toBytes: Array[Byte] = companion.toBytes(this)
 

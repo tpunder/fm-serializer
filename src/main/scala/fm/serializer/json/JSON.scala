@@ -21,20 +21,22 @@ import java.io.Reader
 import java.nio.charset.StandardCharsets.UTF_8
 
 object JSON {
-  private[this] val defaultJSONOutput: ThreadLocal[JSONOutput] = new ThreadLocal[JSONOutput]{
-    override protected def initialValue: JSONOutput = new JSONOutput()
-  }
-  
-  private[this] val minimalJSONOutput: ThreadLocal[JSONOutput] = new ThreadLocal[JSONOutput]{
-    override protected def initialValue: JSONOutput = new JSONOutput(outputNulls = false, outputFalse = false, outputZeros = false)
-  }
-  
-  private[this] val prettyJSONOutput: ThreadLocal[JSONOutput] = new ThreadLocal[JSONOutput]{
-    override protected def initialValue: JSONOutput = new JSONOutput(prettyFormat = true)
+  private[this] val defaultJSONOutput: ThreadLocal[JSONOutput] = makeThreadLocal(JSONSerializerOptions.default)
+  private[this] val defaultWithoutNullsJSONOutput: ThreadLocal[JSONOutput] = makeThreadLocal(JSONSerializerOptions.defaultWithoutNulls)
+  private[this] val minimalJSONOutput: ThreadLocal[JSONOutput] = makeThreadLocal(JSONSerializerOptions.minimal)
+  private[this] val prettyJSONOutput: ThreadLocal[JSONOutput] = makeThreadLocal(JSONSerializerOptions.pretty)
+  private[this] val prettyWithoutNullsJSONOutput: ThreadLocal[JSONOutput] = makeThreadLocal(JSONSerializerOptions.prettyWithoutNulls)
+
+  private def makeThreadLocal(options: JSONSerializerOptions): ThreadLocal[JSONOutput] =  new ThreadLocal[JSONOutput]{
+    override protected def initialValue: JSONOutput = new JSONOutput(options)
   }
   
   def toJSON[@specialized T](v: T)(implicit serializer: Serializer[T]): String = {
     toJSON(v, defaultJSONOutput.get)
+  }
+
+  def toJSONWithoutNulls[@specialized T](v: T)(implicit serializer: Serializer[T]): String = {
+    toJSON(v, defaultWithoutNullsJSONOutput.get)
   }
   
   def toMinimalJSON[@specialized T](v: T)(implicit serializer: Serializer[T]): String = {
@@ -43,6 +45,10 @@ object JSON {
   
   def toPrettyJSON[@specialized T](v: T)(implicit serializer: Serializer[T]): String = {
     toJSON(v, prettyJSONOutput.get)
+  }
+
+  def toPrettyJSONWithoutNulls[@specialized T](v: T)(implicit serializer: Serializer[T]): String = {
+    toJSON(v, prettyWithoutNullsJSONOutput.get)
   }
 
   def toJSON[@specialized T](v: T, out: JSONOutput)(implicit serializer: Serializer[T]): String = {
