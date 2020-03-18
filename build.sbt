@@ -26,6 +26,9 @@ scalacOptions := Seq(
   "-opt-inline-from:<sources>"
 ) else Nil)
 
+// Need to make sure any Java sources are compiled to 1.8 classfile format
+javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
+
 // We don't want log buffering when running ScalaTest
 logBuffered in Test := false
 
