@@ -514,9 +514,12 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers with AppendedClues {
 
   test("FooJavaBeanContainer") {
     val container: FooJavaBeanContainer = new FooJavaBeanContainer()
+    container.setChildren(new java.util.ArrayList())
     
     val bytes: BYTES = serialize(container)
     val container2: FooJavaBeanContainer = deserialize[FooJavaBeanContainer](bytes)
+
+    container shouldBe container2
   }
       
   //===============================================================================================

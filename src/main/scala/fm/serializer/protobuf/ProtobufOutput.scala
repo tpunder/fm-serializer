@@ -37,8 +37,8 @@ final class ProtobufOutput() extends Output {
   def allowStringMap: Boolean = false
   
   private[this] val MaxVarint32Bytes: Int = 5
-  private[this] val MaxVarint64Bytes: Int = 10
-  private[this] val EncodeMessagesAsGroups: Boolean = true
+  //private[this] val MaxVarint64Bytes: Int = 10
+  //private[this] val EncodeMessagesAsGroups: Boolean = true
   
   private[this] val os: FMByteArrayOutputStream = new FMByteArrayOutputStream()
   
@@ -443,7 +443,7 @@ final class ProtobufOutput() extends Output {
     
     // Note: os.lengthPrefixed is marked as @inline to eliminate these closures
     os.lengthPrefixed(tagSize + MaxVarint32Bytes){ f(this, obj) }{ length: Int =>
-      val lengthSize: Int = computeRawVarint32Size(length)
+      //val lengthSize: Int = computeRawVarint32Size(length)
       
       val array: Array[Byte] = os.array
       var offset: Int = os.offset
@@ -498,40 +498,40 @@ final class ProtobufOutput() extends Output {
   }
   
   /** Write a big-endian 32-bit integer. */
-  private def writeRawBigEndian32(value: Int): Unit = {
-    os.ensureAvailable(4)
-    os.offset = writeRawBigEndian32(value, os.array, os.offset)
-  }
+//  private def writeRawBigEndian32(value: Int): Unit = {
+//    os.ensureAvailable(4)
+//    os.offset = writeRawBigEndian32(value, os.array, os.offset)
+//  }
   
   /** Write a big-endian 32-bit integer. */
-  private def writeRawBigEndian32(value: Int, array: Array[Byte], offset: Int): Int = {
-    array(offset)   = ((value >>> 24) & 0xFF).toByte
-    array(offset+1) = ((value >>> 16) & 0xFF).toByte
-    array(offset+2) = ((value >>>  8) & 0xFF).toByte
-    array(offset+3) = ((value       ) & 0xFF).toByte
-    
-    offset + 4
-  }
+//  private def writeRawBigEndian32(value: Int, array: Array[Byte], offset: Int): Int = {
+//    array(offset)   = ((value >>> 24) & 0xFF).toByte
+//    array(offset+1) = ((value >>> 16) & 0xFF).toByte
+//    array(offset+2) = ((value >>>  8) & 0xFF).toByte
+//    array(offset+3) = ((value       ) & 0xFF).toByte
+//
+//    offset + 4
+//  }
   
   /** Write a big-endian 64-bit integer. */
-  private def writeRawBigEndian64(value: Long): Unit = {
-    os.ensureAvailable(8)
-    os.offset = writeRawBigEndian64(value, os.array, os.offset)
-  }
+//  private def writeRawBigEndian64(value: Long): Unit = {
+//    os.ensureAvailable(8)
+//    os.offset = writeRawBigEndian64(value, os.array, os.offset)
+//  }
   
   /** Write a big-endian 64-bit integer. */
-  private def writeRawBigEndian64(value: Long, array: Array[Byte], offset: Int): Int = {
-    array(offset)   = (value >>> 56).toByte
-    array(offset+1) = (value >>> 48).toByte
-    array(offset+2) = (value >>> 40).toByte
-    array(offset+3) = (value >>> 32).toByte
-    array(offset+4) = (value >>> 24).toByte
-    array(offset+5) = (value >>> 16).toByte
-    array(offset+6) = (value >>>  8).toByte
-    array(offset+7) = (value       ).toByte
-    
-    offset + 8
-  }
+//  private def writeRawBigEndian64(value: Long, array: Array[Byte], offset: Int): Int = {
+//    array(offset)   = (value >>> 56).toByte
+//    array(offset+1) = (value >>> 48).toByte
+//    array(offset+2) = (value >>> 40).toByte
+//    array(offset+3) = (value >>> 32).toByte
+//    array(offset+4) = (value >>> 24).toByte
+//    array(offset+5) = (value >>> 16).toByte
+//    array(offset+6) = (value >>>  8).toByte
+//    array(offset+7) = (value       ).toByte
+//
+//    offset + 8
+//  }
   
   private def writeRawVarint32(value: Int): Unit = {
     os.ensureAvailable(computeRawVarint32Size(value))
