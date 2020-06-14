@@ -20,7 +20,7 @@ import fm.common.Implicits._
 /**
  * For deserializing Option types.  Note: this does NOT allow Some(null)
  */
-final case class OptionDeserializer[A](implicit deser: Deserializer[A]) extends Deserializer[Option[A]] {
+final case class OptionDeserializer[A]()(implicit deser: Deserializer[A]) extends Deserializer[Option[A]] {
   def defaultValue: Option[A] = None
   final def deserializeRaw(input: RawInput): Option[A] = Option(deser.deserializeRaw(input))
   

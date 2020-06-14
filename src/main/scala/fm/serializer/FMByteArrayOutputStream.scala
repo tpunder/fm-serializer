@@ -1012,10 +1012,10 @@ final class FMByteArrayOutputStream(
     checkOffsetAndLength(msg, arr, arr.length, off, len)
   }
   
-  @elidable(elidable.ASSERTION)
-  private def checkOffsetAndLength(msg: => String, str: CharSequence, off: Int, len: Int): Unit = {
-    checkOffsetAndLength(msg, str, str.length, off, len)
-  }
+//  @elidable(elidable.ASSERTION)
+//  private def checkOffsetAndLength(msg: => String, str: CharSequence, off: Int, len: Int): Unit = {
+//    checkOffsetAndLength(msg, str, str.length, off, len)
+//  }
   
   @elidable(elidable.ASSERTION)
   private def checkOffsetAndLength(msg: => String, obj: AnyRef, actualLength: Int, off: Int, len: Int): Unit = {
