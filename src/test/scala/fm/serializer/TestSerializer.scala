@@ -16,7 +16,7 @@
 package fm.serializer
 
 import fm.common.{IP, ImmutableArray, ImmutableDate, UUID}
-import fm.serializer.validation.{Validation, ValidationError, ValidationResult}
+import fm.serializer.validation.{Validation, ValidationError, ValidationOptions, ValidationResult}
 import java.io.File
 import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
 import java.nio.charset.StandardCharsets.UTF_8
@@ -189,19 +189,35 @@ object TestSerializer {
   )
 
   case class MostlyEmptyFoo(@Field(19) bar: Bar)
-  case class ValidationCls(string: String, int: Int, nested: NestedValidation, defaultValue: String = "default")
+
+  case class ValidationCls(
+    @Field(1) string: String,
+    @Field(2) int: Int,
+    @Field(3) option: Option[String],
+    @Field(4) nested: NestedValidation,
+    @Field(5) defaultValue: String = "default",
+    @Field(6) defaultOptionValue: Option[String] = None,
+    @Field(7) anotherDefaultValue: Option[String] = Some("default_value")
+  )
+
   case class NestedValidation(foo: String, bar: Int)
-  case class ValidationMissingNestedCls(string: String, int: Int, nested: NestedValidationMissingField)
+  case class ValidationMissingNestedCls(string: String, int: Int, option: Option[String], nested: NestedValidationMissingField)
   case class NestedValidationMissingField(foo: String)
 
   // Wrong type for "int" field
   case class ValidationWrongType(string: String, int: String)
 
+  // Missing "option" and "nested"
+  case class ValidationMissingOptionAndNestedFields(string: String, int: Int)
+
   // Missing "nested"
-  case class ValidationMissingField(string: String, int: Int)
+  case class ValidationMissingNestedField(string: String, int: Int, option: Option[String])
+
+  // Uses defaults for defaultValue and defaultOptionValue
+  case class ValidationUsesDefaults(string: String, int: Int, option: Option[String], nested: NestedValidation)
 
   // Extra "qweqwe" field
-  case class ValidationExtraField(string: String, int: Int, nested: NestedValidation, defaultValue: String, qweqwe: String)
+  case class ValidationExtraField(string: String, int: Int, option: Option[String], nested: NestedValidation, defaultValue: String, defaultOptionValue: Option[String], anotherDefaultValue: Option[String], qweqwe: String)
 }
 
 trait TestSerializer[BYTES] extends FunSuite with Matchers with AppendedClues {
@@ -252,10 +268,41 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers with AppendedClues {
   //===============================================================================================
   // Validation Testing
   //===============================================================================================
-  test("Validation - Success") {
+  test("Validation - Round trip - @Field annotation with default values") {
+    val value: ValidationCls = ValidationCls("string", 123, Some("option"), NestedValidation("foo", 321))
+    deserialize[ValidationCls](serialize(value)) shouldBe value
+  }
+
+  test("Validation - Success - Default Values and options") {
     checkValidation(
-      obj = ValidationCls("string", 123, NestedValidation("foo", 321)),
+      obj = ValidationCls("string", 123, Some("option"), NestedValidation("foo", 321)),
       expected = ValidationResult.Success
+    )
+  }
+
+  test("Validation - Success - Default Values and report unset fields") {
+    checkValidation(
+      obj = ValidationCls("string", 123, Some("option"), NestedValidation("foo", 321)),
+      expected = ValidationResult.Success,
+      options = ValidationOptions(
+        ignoreUnknownFields = false,
+        ignoreUnsetFields = false,
+        reportUnsetFieldsWithDefaultValues = false,
+        reportUnsetOptionFields = true
+      )
+    )
+  }
+
+  test("Validation - Success - Explicit values, report unset fields") {
+    checkValidation(
+      obj = ValidationCls("string", 123, Some("option"), NestedValidation("foo", 321), "asd", Some("qwe")),
+      expected = ValidationResult.Success,
+      options = ValidationOptions(
+        ignoreUnknownFields = false,
+        ignoreUnsetFields = false,
+        reportUnsetFieldsWithDefaultValues = true,
+        reportUnsetOptionFields = true
+      )
     )
   }
 
@@ -266,22 +313,68 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers with AppendedClues {
     )
   }
 
-  test("Validation - Missing Field") {
+  test("Validation - Missing option and nested Fields") {
     checkValidation(
-      obj = ValidationMissingField("string", 123),
-      expected = ValidationResult.Failure(Vector(ValidationError.MissingField("", 3, "nested")))
+      obj = ValidationMissingOptionAndNestedFields("string", 123),
+      expected = ValidationResult.Failure(Vector(ValidationError.MissingField("", 4, "nested")))
     )
   }
 
-  test("Validation - Nested Missing Field") {
+  test("Validation - Missing option and nested Fields - report on unset option fields") {
     checkValidation(
-      obj = ValidationMissingNestedCls("string", 123, NestedValidationMissingField("foo")),
+      obj = ValidationMissingOptionAndNestedFields("string", 123),
+      expected = ValidationResult.Failure(Vector(ValidationError.MissingField("", 3, "option"), ValidationError.MissingField("", 4, "nested"))),
+      options = ValidationOptions(
+        ignoreUnknownFields = false,
+        ignoreUnsetFields = false,
+        reportUnsetFieldsWithDefaultValues = false,
+        reportUnsetOptionFields = true
+      )
+    )
+  }
+
+  test("Validation - Missing nested Field") {
+    checkValidation(
+      obj = ValidationMissingNestedField("string", 123, Some("option")),
+      expected = ValidationResult.Failure(Vector(ValidationError.MissingField("", 4, "nested")))
+    )
+  }
+
+  test("Validation - Nested Missing Field - Default Options") {
+    checkValidation(
+      obj = ValidationMissingNestedCls("string", 123, Some("option"), NestedValidationMissingField("foo")),
       expected = ValidationResult.Failure(Vector(ValidationError.MissingField("nested", 2, "bar")))
     )
   }
 
+  test("Validation - Report on unset fields with default options") {
+    checkValidation(
+      obj = ValidationUsesDefaults("string", 123, Some("option"), NestedValidation("foo", 321)),
+      expected = ValidationResult.Failure(Vector(ValidationError.MissingField("", 5, "defaultValue"))),
+      options = ValidationOptions(
+        ignoreUnknownFields = false,
+        ignoreUnsetFields = false,
+        reportUnsetFieldsWithDefaultValues = true,
+        reportUnsetOptionFields = false
+      )
+    )
+  }
+
+  test("Validation - Report on unset option fields") {
+    checkValidation(
+      obj = ValidationUsesDefaults("string", 123, Some("option"), NestedValidation("foo", 321)),
+      expected = ValidationResult.Failure(Vector(ValidationError.MissingField("", 5, "defaultValue"), ValidationError.MissingField("", 6, "defaultOptionValue"), ValidationError.MissingField("", 7, "anotherDefaultValue"))),
+      options = ValidationOptions(
+        ignoreUnknownFields = false,
+        ignoreUnsetFields = false,
+        reportUnsetFieldsWithDefaultValues = true,
+        reportUnsetOptionFields = true
+      )
+    )
+  }
+
   test("Validation - Extra Field") {
-    val obj: ValidationExtraField = ValidationExtraField("string", 123, NestedValidation("foo", 321), "default", "qwe")
+    val obj: ValidationExtraField = ValidationExtraField("string", 123, Some("option"), NestedValidation("foo", 321), "default", None, Some("bar"), "qwe")
     val bytes: BYTES = serialize(obj)
     val res: ValidationResult = Validation.validate[ValidationCls](makeInput(bytes))
 
@@ -293,12 +386,12 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers with AppendedClues {
     error.isInstanceOf[ValidationError.UnknownField] shouldBe true
 
     // One or both of these should be set depending on if the serialization uses field numbers or field names
-    require(error.fieldNumber === 5 || error.fieldName === "qweqwe")
+    require(error.fieldNumber === 8 || error.fieldName === "qweqwe")
   }
 
-  private def checkValidation[T](obj: T, expected: ValidationResult)(implicit ser: Serializer[T]): Unit = {
+  private def checkValidation[T](obj: T, expected: ValidationResult, options: ValidationOptions = ValidationOptions.default)(implicit ser: Serializer[T]): Unit = {
     val bytes: BYTES = serialize(obj)
-    val res: ValidationResult = Validation.validate[ValidationCls](makeInput(bytes))
+    val res: ValidationResult = Validation.validate[ValidationCls](makeInput(bytes), options)
     res shouldBe expected
   } withClue s"obj: $obj, expected: $expected"
 
