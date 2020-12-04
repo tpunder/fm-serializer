@@ -260,7 +260,8 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
         constructorIdx = combine(constructorIdx, other.constructorIdx),
         serializer = combine(serializer, other.serializer),
         deserializer = combine(deserializer, other.deserializer),
-        tpe = combine(tpe, other.tpe)
+        tpe = combine(tpe, other.tpe),
+        defaultValue = combine(defaultValue, other.defaultValue)
       )
     } catch {
       case ex: Exception => ctx.abort(ctx.enclosingPosition, s"Could not Combine: ${ex.getMessage()} \nThis: $this\nOther: $other\nStack Trace:\n  ${ex.getStackTrace.mkString("\n  ")}")
@@ -401,7 +402,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
       if ann.tpe =:= annotationTpe
     } yield {
       log(s"""extractFieldAnnotations($tpe) - Member: $member - "${member.name.decoded}" (${member.getClass}) - Annotations: ${member.annotations}""")
-      
+
       val sym: MethodSymbol = member.asMethod
       val returnType: Type = resolveType(tpe, sym.returnType)
       
@@ -440,8 +441,10 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     
     // annotations on constructor params (for non-abstract classes)
     val constructorParams: Vector[FieldImpl] = if (isAbstract) Vector.empty else for {
-      ctor <- tpe.member(nme.CONSTRUCTOR).asTerm.alternatives.toVector
-      (param, idx) <- ctor.asMethod.paramss.flatten.zipWithIndex // TODO: Handle multiple parameter lists
+      ctor: MethodSymbol <- tpe.member(nme.CONSTRUCTOR).asTerm.alternatives.toVector.collect{ case c: MethodSymbol => c }
+      args: List[Symbol] = ctor.asMethod.paramss.flatten
+      defaults: List[Option[Tree]] = defaultValuesForMethod(tpe, ctor)
+      ((param: Symbol, default: Option[Tree]), idx: Int) <- (args zip defaults).zipWithIndex // TODO: Handle multiple parameter lists
       ann <- param.annotations
       if ann.tpe =:= annotationTpe
     } yield {
@@ -457,7 +460,12 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
       
       val spec: FieldImpl = makeFieldImpl(ann.scalaArgs, name, defaultNumber)
       
-      val additionalInfo: FieldImpl = FieldImpl(constructorIdx = idx, getter = getter, tpe = resolveType(tpe, param.typeSignature))
+      val additionalInfo: FieldImpl = FieldImpl(
+        constructorIdx = idx,
+        getter = getter,
+        tpe = resolveType(tpe, param.typeSignature),
+        defaultValue = default.orNull
+      )
       
       spec combine additionalInfo
     }
@@ -1274,7 +1282,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
   }
   
   /**
-   * Given a type a a method of that type return the default values for the parameters of the method
+   * Given a type and a method of that type return the default values for the parameters of the method
    */
   def defaultValuesForMethod(tpe: Type, method: MethodSymbol): List[Option[Tree]] = {
     method.paramss.flatten.map{ _.asTerm }.zipWithIndex.map { case (term: TermSymbol, idx: Int) =>
