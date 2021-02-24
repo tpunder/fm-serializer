@@ -4,9 +4,9 @@ name := "fm-serializer"
 
 description := "Scala Macro Based Serialization"
 
-scalaVersion := "2.12.11"
+scalaVersion := "2.12.13"
 
-crossScalaVersions := Seq("2.11.11", "2.12.11")
+crossScalaVersions := Seq("2.11.12", "2.12.13")
 
 // Needed for the JavaBean tests to work
 compileOrder := CompileOrder.JavaThenScala
@@ -36,8 +36,8 @@ libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
 
 // SCALA Libraries
 libraryDependencies ++= Seq(
-  "com.frugalmechanic" %% "fm-common" % "0.44.0",
-  "com.frugalmechanic" %% "fm-json" % "0.2.0"
+  "com.frugalmechanic" %% "fm-common" % "0.50.0",
+  "com.frugalmechanic" %% "fm-json" % "0.3.0"
 )
 
 // JAVA Libraries
