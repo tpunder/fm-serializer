@@ -1187,7 +1187,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     implicit object $name extends fm.serializer.ObjectDeserializer[$tpe] {
       ..${deserInfo.deserializerDeclarations}
     
-      private[this] val fieldNameToNumberMap: scala.collection.immutable.Map[String, Int] = scala.collection.immutable.HashMap(..$fieldNameToNumberMapArgs)
+      private[this] val fieldNameToNumberMap: fm.serializer.FieldNameToNumberLookup = new fm.serializer.FieldNameToNumberLookup(..$fieldNameToNumberMapArgs)
     
       final def defaultValue: $tpe = null.asInstanceOf[$tpe]
       final def deserializeRaw(input: fm.serializer.RawInput): $tpe = input.readRawObject{ readFun }

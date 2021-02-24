@@ -17,8 +17,8 @@ package fm.serializer.jackson
 
 import com.fasterxml.jackson.core.{JsonParser, JsonToken}
 import fm.json._
-import fm.serializer.json.{JSONInput, JSONDeserializerOptions}
-import fm.serializer.{CollectionInput, FieldInput, Input}
+import fm.serializer.json.{JSONDeserializerOptions, JSONInput}
+import fm.serializer.{CollectionInput, FieldInput, FieldNameToNumberLookup, Input}
 import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
 
 /**
@@ -103,7 +103,7 @@ final class JsonParserInput(parser: JsonParser, options: JSONDeserializerOptions
    * Return the field number for the next readable field.
    * Returns 0 if we've reached the end of the object/message
    */
-  override def readFieldNumber(nameToNumMap: Map[String, Int]): Int = {
+  override def readFieldNumber(nameToNumMap: FieldNameToNumberLookup): Int = {
     val fieldName: String = readFieldName()
     _lastFieldName = fieldName
     JSONInput.readFieldNumber(fieldName, nameToNumMap)

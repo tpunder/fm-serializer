@@ -15,7 +15,7 @@
  */
 package fm.serializer.protobuf
 
-import fm.serializer.{CollectionInput, FieldInput, Input}
+import fm.serializer.{CollectionInput, FieldInput, FieldNameToNumberLookup, Input}
 import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
 import scala.annotation.{switch, tailrec}
 
@@ -27,7 +27,7 @@ abstract class ProtobufInput extends Input {
     var unscaledVal: JavaBigInteger = null
     var scale: Int = -1
 
-    var fieldNumber: Int = in.readFieldNumber(Map.empty)
+    var fieldNumber: Int = in.readFieldNumber(FieldNameToNumberLookup.empty)
 
     while (fieldNumber != 0) {
       fieldNumber match {
@@ -36,7 +36,7 @@ abstract class ProtobufInput extends Input {
         case _ => in.skipUnknownField()
       }
 
-      fieldNumber = in.readFieldNumber(Map.empty)
+      fieldNumber = in.readFieldNumber(FieldNameToNumberLookup.empty)
     }
 
     new JavaBigDecimal(unscaledVal, scale)
@@ -54,7 +54,7 @@ abstract class ProtobufInput extends Input {
   /**
    * Read the next field number
    */
-  final def readFieldNumber(nameToNumMap: Map[String, Int]): Int = {
+  final def readFieldNumber(nameToNumMap: FieldNameToNumberLookup): Int = {
     val tag: Int = readTag()
     val fieldNumber: Int = WireFormat.getTagFieldNumber(tag)
     _lastFieldNumber = fieldNumber

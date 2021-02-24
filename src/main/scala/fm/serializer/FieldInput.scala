@@ -29,7 +29,7 @@ trait FieldInput extends NestedInput {
    * Return the field number for the next readable field.
    * Returns 0 if we've reached the end of the object/message
    */
-  def readFieldNumber(nameToNumMap: Map[String, Int]): Int
+  def readFieldNumber(nameToNumMap: FieldNameToNumberLookup): Int
   
   /**
    * If dynamic string maps are supported then this should be implemented

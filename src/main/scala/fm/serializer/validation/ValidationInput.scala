@@ -1,7 +1,7 @@
 package fm.serializer.validation
 
 import fm.common.Implicits._
-import fm.serializer.{CollectionInput, Deserializer, FieldInput, Input}
+import fm.serializer.{CollectionInput, Deserializer, FieldInput, FieldNameToNumberLookup, Input}
 import java.math.BigInteger
 import scala.collection.mutable.Builder
 
@@ -25,19 +25,19 @@ final class ValidationInput(self: Input, options: ValidationOptions) extends Inp
     if (errors.isEmpty) ValidationResult.Success else ValidationResult.Failure(errors.distinct)
   }
 
-  override def readFieldNumber(nameToNumMap: Map[String, Int]): Int = {
+  override def readFieldNumber(nameToNumMap: FieldNameToNumberLookup): Int = {
     val res: Int = self.readFieldNumber(nameToNumMap)
     fieldNumber = lastFieldNumber()
     fieldName = lastFieldName()
 
     // If the fieldNumber is not set but we have a fieldName then try to lookup the fieldNumber from the nameToNumMap
     if (fieldName.isNotNullOrBlank && fieldNumber <= 0) {
-      fieldNumber = nameToNumMap.get(fieldName) orElse { nameToNumMap.find{ case (name: String, _: Int) => fieldName equalsIgnoreCase name }.map{ _._2 } } getOrElse fieldNumber
+      fieldNumber = nameToNumMap.getFieldNumberOrDefault(fieldName, -1)
     }
 
     // If the fieldName is not set but we have a fieldNumber then try to lookup what the fieldName from the nameToNumMap
     if (fieldName.isNullOrBlank && fieldNumber > 0) {
-      fieldName = nameToNumMap.find{ case (_: String, num: Int) => num === fieldNumber }.map{ _._1 }.getOrElse(fieldName)
+      fieldName = nameToNumMap.getFieldNameOrDefault(fieldNumber, "")
     }
 
     res

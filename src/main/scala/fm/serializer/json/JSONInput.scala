@@ -17,23 +17,13 @@ package fm.serializer.json
 
 import java.lang.{StringBuilder => JavaStringBuilder}
 import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
-import fm.serializer.{CollectionInput, FieldInput, Input}
+import fm.serializer.{CollectionInput, FieldInput, FieldNameToNumberLookup, Input}
 import fm.serializer.base64.Base64
 
 object JSONInput {
-  private[serializer] def readFieldNumber(fieldName: String, nameToNumMap: Map[String, Int]): Int = {
+  private[serializer] def readFieldNumber(fieldName: String, nameToNumMap: FieldNameToNumberLookup): Int = {
     if (null == fieldName) return 0
-
-    try {
-      // Exact name match
-      nameToNumMap(fieldName)
-    } catch {
-      case _: NoSuchElementException =>
-        // TODO: possibly require that the map be pre-populated with the lower case versions so we don't have to search through it
-        val lowerName: String = fieldName.toLowerCase
-        if (nameToNumMap.contains(lowerName)) nameToNumMap(lowerName)
-        else nameToNumMap.find{ case (n,i) => n.toLowerCase == lowerName }.map{ _._2 }.getOrElse(-1)
-    }
+    nameToNumMap.getFieldNumberOrDefault(fieldName, -1)
   }
 }
 
@@ -131,7 +121,7 @@ abstract class JSONInput(options: JSONDeserializerOptions) extends Input {
   final override def lastFieldName(): String = _lastFieldName
   final override def lastFieldNumber(): Int = 0 // Use for unknown field reporting - there will be no field number
 
-  final override def readFieldNumber(nameToNumMap: Map[String, Int]): Int = {
+  final override def readFieldNumber(nameToNumMap: FieldNameToNumberLookup): Int = {
     val name: String = readFieldName()
     _lastFieldName = name
     JSONInput.readFieldNumber(name, nameToNumMap)
@@ -169,7 +159,7 @@ abstract class JSONInput(options: JSONDeserializerOptions) extends Input {
   // This avoids the object creations in skipUnknownField()
   private[this] val skipRawObjectFun: Function1[FieldInput, AnyRef] = new Function1[FieldInput, AnyRef] {
     def apply(in: FieldInput): AnyRef = {
-      while (in.readFieldNumber(Map.empty) != 0) in.skipUnknownField()
+      while (in.readFieldNumber(FieldNameToNumberLookup.empty) != 0) in.skipUnknownField()
       null
     }
   }

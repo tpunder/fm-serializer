@@ -15,7 +15,7 @@
  */
 package fm.serializer.bson
 
-import fm.serializer.{CollectionInput, FieldInput, Input}
+import fm.serializer.{CollectionInput, FieldInput, FieldNameToNumberLookup, Input}
 import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
 import org.bson.types.{MaxKey, MinKey, ObjectId}
 import org.bson.{BsonBinary, BsonReader, BsonType}
@@ -70,22 +70,12 @@ final class BSONInput(reader: BsonReader) extends Input {
   final override def lastFieldNumber(): Int = 0 // Use for unknown field reporting - there will be no field number
 
   // Note: copied from JSONInput
-  def readFieldNumber(nameToNumMap: Map[String, Int]): Int = {
+  def readFieldNumber(nameToNumMap: FieldNameToNumberLookup): Int = {
     val name: String = readFieldName()
     _lastFieldName = name
 
     if (null == name) return 0
-
-    try {
-      // Exact name match
-      nameToNumMap(name)
-    } catch {
-      case _: NoSuchElementException =>
-        // TODO: possibly require that the map be pre-populated with the lower case versions so we don't have to search through it
-        val lowerName: String = name.toLowerCase
-        if (nameToNumMap.contains(lowerName)) nameToNumMap(lowerName)
-        else nameToNumMap.find{ case (n,i) => n.toLowerCase == lowerName }.map{ _._2 }.getOrElse(-1)
-    }
+    nameToNumMap.getFieldNumberOrDefault(name, -1)
   }
 
   def readFieldName(): String = {
