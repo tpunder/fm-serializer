@@ -114,7 +114,7 @@ final class ProtobufInputStreamInput(is: InputStream, options: ProtobufOptions) 
    */
   private def readRawByteInt(): Int = {
     if (currentBytesRead >= currentBytesLimit) -1 else {
-      val b = is.read()
+      val b: Int = is.read()
       incrementBytesRead(1)
       b
     }
