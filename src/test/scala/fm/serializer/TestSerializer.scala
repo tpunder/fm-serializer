@@ -217,7 +217,16 @@ object TestSerializer {
   case class ValidationUsesDefaults(string: String, int: Int, option: Option[String], nested: NestedValidation)
 
   // Extra "qweqwe" field
-  case class ValidationExtraField(string: String, int: Int, option: Option[String], nested: NestedValidation, defaultValue: String, defaultOptionValue: Option[String], anotherDefaultValue: Option[String], qweqwe: String)
+  case class ValidationExtraField(
+    string: String,
+    int: Int,
+    option: Option[String],
+    nested: NestedValidation,
+    defaultValue: String,
+    defaultOptionValue: Option[String],
+    anotherDefaultValue: Option[String],
+    qweqwe: String
+  )
 }
 
 trait TestSerializer[BYTES] extends FunSuite with Matchers with AppendedClues {

@@ -147,8 +147,17 @@ final class ProtobufInputStreamInput(is: InputStream, options: ProtobufOptions) 
    */
   def skipRawBytes(size: Int) {
     if (size < 0) throw InvalidProtocolBufferException.negativeSize()
-    is.skip(size)
-    incrementBytesRead(size)
+
+    var skipped: Int = 0
+
+    // InputStream.skip() might skip less than the requested size (especially for BufferedInputStream) so we need to
+    // keep skipping until we hit our size or we detect the end of the stream.
+    while (skipped < size) {
+      val actual: Int = is.skip(size - skipped).toInt
+      incrementBytesRead(actual)
+      if (actual == 0 && !hasAnotherElement) return
+      skipped += actual
+    }
   }
   
   /**
