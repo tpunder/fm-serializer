@@ -18,6 +18,7 @@ package fm.serializer.protobuf
 import java.io.{InputStream, OutputStream}
 import fm.serializer.{Deserializer, Serializer}
 import fm.serializer.base64.Base64
+import java.nio.ByteBuffer
 
 object Protobuf {
 
@@ -84,7 +85,15 @@ object Protobuf {
   def fromBytes[@specialized T](bytes: Array[Byte], options: ProtobufOptions)(implicit deserializer: Deserializer[T]): T = {
     deserializer.deserializeRaw(new ProtobufByteArrayInput(bytes, options))
   }
-  
+
+  def fromByteBuffer[@specialized T](bytes: ByteBuffer)(implicit deserializer: Deserializer[T]): T = {
+    fromByteBuffer(bytes, ProtobufOptions.default)
+  }
+
+  def fromByteBuffer[@specialized T](bytes: ByteBuffer, options: ProtobufOptions)(implicit deserializer: Deserializer[T]): T = {
+    deserializer.deserializeRaw(new ProtobufByteBufferInput(bytes, options))
+  }
+
   def fromInputStream[@specialized T](is: InputStream)(implicit deserializer: Deserializer[T]): T = {
     fromInputStream(is, ProtobufOptions.default)
   }
