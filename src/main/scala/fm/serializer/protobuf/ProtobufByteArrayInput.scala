@@ -108,7 +108,7 @@ final class ProtobufByteArrayInput(buffer: Array[Byte], options: ProtobufOptions
    * @throws InvalidProtocolBufferException The end of the stream or the current
    *                                        limit was reached.
    */
-  final def skipRawBytes(size: Int) {
+  final def skipRawBytes(size: Int): Unit = {
     if (size < 0) throw InvalidProtocolBufferException.negativeSize()
     offset += size
     if (offset > limit) throw InvalidProtocolBufferException.truncatedMessage()

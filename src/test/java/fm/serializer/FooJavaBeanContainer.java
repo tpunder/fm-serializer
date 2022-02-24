@@ -1,9 +1,6 @@
 package fm.serializer;
 
-import java.beans.Transient;
-import java.util.ArrayList;
 import java.util.List;
-import javax.xml.bind.annotation.XmlTransient;
 
 public class FooJavaBeanContainer {
   protected List<FooJavaBean> children;

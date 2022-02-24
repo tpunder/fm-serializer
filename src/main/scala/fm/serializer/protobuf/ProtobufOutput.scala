@@ -442,7 +442,7 @@ final class ProtobufOutput() extends Output {
     val tagSize: Int = computeRawVarint32Size(tag)
     
     // Note: os.lengthPrefixed is marked as @inline to eliminate these closures
-    os.lengthPrefixed(tagSize + MaxVarint32Bytes){ f(this, obj) }{ length: Int =>
+    os.lengthPrefixed(tagSize + MaxVarint32Bytes){ f(this, obj) }{ (length: Int) =>
       val lengthSize: Int = computeRawVarint32Size(length)
       
       val array: Array[Byte] = os.array

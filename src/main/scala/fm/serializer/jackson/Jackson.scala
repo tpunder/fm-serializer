@@ -59,7 +59,7 @@ object Jackson {
   def toJsonNode[T](v: T, options: JSONSerializerOptions)(implicit serializer: Serializer[T]): JsonNode = {
     val generator: JsonNodeGenerator = new JsonNodeGenerator
     write(v, new JsonGeneratorOutput(generator, options))
-    generator.result
+    generator.result()
   }
 
   def fromJsonNode[T](node: JsonNode)(implicit deserializer: Deserializer[T]): T = {

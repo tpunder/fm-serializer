@@ -15,9 +15,10 @@
  */
 package fm.serializer
 
-object ObjectDeserializer {
-  def apply[T](): ObjectDeserializer[T] = macro Macros.makeObjectDeserializer[T]
-  def apply[T](field: Field, fields: Field*): ObjectDeserializer[T] = macro Macros.makeObjectDeserializerFromFields[T]
+object ObjectDeserializer extends ObjectDeserializerObj {
+  // Moved to ObjectDeserializerObj to support Scala 2 and 3
+  //def apply[T](): ObjectDeserializer[T] = macro Macros.makeObjectDeserializer[T]
+  //def apply[T](field: Field, fields: Field*): ObjectDeserializer[T] = macro Macros.makeObjectDeserializerFromFields[T]
 }
 
 /**

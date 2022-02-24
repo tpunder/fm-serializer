@@ -16,6 +16,7 @@
 package fm.serializer
 
 import fm.common.{IP, ImmutableArray, ImmutableDate, UUID}
+import fm.common.JavaConverters._
 import fm.serializer.validation.{Validation, ValidationError, ValidationOptions, ValidationResult}
 import java.io.File
 import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
@@ -24,8 +25,9 @@ import java.nio.charset.StandardCharsets.UTF_8
 import java.time.{LocalDate, LocalDateTime}
 import java.util.{Calendar, Date}
 import org.bson.types.ObjectId
-import org.scalatest.{AppendedClues, FunSuite, Matchers}
-import scala.collection.JavaConverters._
+import org.scalatest.AppendedClues
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 object TestSerializer {
   private val RepeatFactor: Int = 1024
@@ -164,8 +166,8 @@ object TestSerializer {
     ipMax: IP = IP("255.255.255.255"),
     ipNone: Option[IP] = None,
     ipSome: Option[IP] = Some(IP("192.168.0.1")),
-    bytes: ImmutableArray[Byte] = ImmutableArray.wrap("Hello World!".getBytes(UTF_8)),
-    moreBytes: ImmutableArray[Byte] = ImmutableArray.wrap(("Hello \r\t\n \\ / \" \b\f oneByte: \u0024 twoByte: \u00A2 threeByte: \u20AC fourByteSupplementary: \uD83D\uDCA5  World!"*RepeatFactor).getBytes(UTF_8)),
+    bytes: ImmutableArray[Byte] = ImmutableArray.unsafeWrapArray("Hello World!".getBytes(UTF_8)),
+    moreBytes: ImmutableArray[Byte] = ImmutableArray.unsafeWrapArray(("Hello \r\t\n \\ / \" \b\f oneByte: \u0024 twoByte: \u00A2 threeByte: \u20AC fourByteSupplementary: \uD83D\uDCA5  World!"*RepeatFactor).getBytes(UTF_8)),
     bytesNull: ImmutableArray[Byte] = null,
     immutableArrayInts: ImmutableArray[Int] = ImmutableArray(1,2,3,4,Int.MinValue,Int.MaxValue),
     immutableArrayLongs: ImmutableArray[Long] = ImmutableArray(1,2,3,4,Int.MinValue,Int.MaxValue,Long.MinValue,Long.MaxValue),
@@ -236,7 +238,7 @@ object TestSerializer {
   )
 }
 
-trait TestSerializer[BYTES] extends FunSuite with Matchers with AppendedClues {
+trait TestSerializer[BYTES] extends AnyFunSuite with Matchers with AppendedClues {
   import TestSerializer._
 
   // Does the serialization method support serializing raw collections
@@ -255,6 +257,18 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers with AppendedClues {
   // Primitive Testing
   //===============================================================================================
   if (supportsPrimitives) {
+    test("Byte Primitives") {
+      checkPrimitive(123)
+      checkPrimitive(Byte.MinValue)
+      checkPrimitive(Byte.MaxValue)
+    }
+
+    test("Short Primitives") {
+      checkPrimitive(123)
+      checkPrimitive(Short.MinValue)
+      checkPrimitive(Short.MaxValue)
+    }
+
     test("Int Primitives") {
       checkPrimitive(123)
       checkPrimitive(Int.MinValue)
@@ -272,8 +286,8 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers with AppendedClues {
     }
 
     test("ImmutableArray[Byte] Primitives") {
-      checkPrimitive(ImmutableArray.wrap("Hello World!".getBytes(UTF_8)))
-      checkPrimitive(ImmutableArray.wrap(("Hello \r\t\n \\ / \" \b\f oneByte: \u0024 twoByte: \u00A2 threeByte: \u20AC fourByteSupplementary: \uD83D\uDCA5  World!"*RepeatFactor).getBytes(UTF_8)))
+      checkPrimitive(ImmutableArray.unsafeWrapArray("Hello World!".getBytes(UTF_8)))
+      checkPrimitive(ImmutableArray.unsafeWrapArray(("Hello \r\t\n \\ / \" \b\f oneByte: \u0024 twoByte: \u00A2 threeByte: \u20AC fourByteSupplementary: \uD83D\uDCA5  World!"*RepeatFactor).getBytes(UTF_8)))
     }
   }
 
@@ -414,74 +428,131 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers with AppendedClues {
   //===============================================================================================
   // Simple Object Testing
   //===============================================================================================
-  
+
   case class PersonNoAge(name: String)
   case class Person(name: String, age: Int = 18, blah: String = "blah")
   case class LinkedPerson(person: Person, next: LinkedPerson)
+  case class OptionPerson(person: Option[Person])
+  case class LinkedOptionPerson(person: Person, next: Option[Person])
+  case class PersonWithChild(name: String, age: Int = 18, blah: String = "blah", child: Option[PersonWithChild] = None)
 
   test("Person") {
     val p: Person = Person("Bob", 123)
     val bytes: BYTES = serialize(p)
     val p2: Person = deserialize[Person](bytes)
-    
+
     p2.name should equal (p.name)
     p2.age should equal (p.age)
-    
+
     p2 should equal (p)
   }
-  
+
   test("Person - Default Values for missing fields") {
     val p: PersonNoAge = PersonNoAge("Bob")
     val bytes: BYTES = serialize(p)
     val p2: Person = deserialize[Person](bytes)
-    
+
     p2.name should equal (p.name)
     p2.age should equal (18)
     p2.blah should equal ("blah")
   }
-  
+
   test("Linked Person - 1") {
     val p: LinkedPerson = LinkedPerson(Person("one", 1, "1"), null)
     val bytes: BYTES = serialize(p)
     val p2: LinkedPerson = deserialize[LinkedPerson](bytes)
-    
+
     p2 should equal (p)
   }
-  
-  test("Linked Person - 2") {    
+
+  test("Linked Person - 2") {
     val p: LinkedPerson = LinkedPerson(Person("one", 1, "1"), LinkedPerson(Person("two", 2, "2"), null))
-    val bytes: BYTES = serialize(p)    
+    val bytes: BYTES = serialize(p)
     val p2: LinkedPerson = deserialize[LinkedPerson](bytes)
-    
+
     p2 should equal (p)
   }
-  
-  test("Linked Person - 3") {    
+
+  test("Linked Person - 3") {
     val p: LinkedPerson = LinkedPerson(Person("one", 1, "1"), LinkedPerson(Person("two", 2, "2"), LinkedPerson(Person("three", 3, "3"), null)))
     val bytes: BYTES = serialize(p)
     val p2: LinkedPerson = deserialize[LinkedPerson](bytes)
-    
+
     p2 should equal (p)
   }
-  
+
+  test("Option Person - 1") {
+    val p: OptionPerson = OptionPerson(None)
+
+    val bytes: BYTES = serialize(p)
+    val p2: OptionPerson = deserialize[OptionPerson](bytes)
+
+    p2 should equal(p)
+  }
+
+  test("Option Person - 2") {
+    val p: OptionPerson = OptionPerson(Some(Person("one", 1, "1")))
+
+    val bytes: BYTES = serialize(p)
+    val p2: OptionPerson = deserialize[OptionPerson](bytes)
+
+    p2 should equal(p)
+  }
+
+  test("Linked Option Person - 1") {
+    val p: LinkedOptionPerson = LinkedOptionPerson(Person("one", 1, "1"), None)
+
+    val bytes: BYTES = serialize(p)
+    val p2: LinkedOptionPerson = deserialize[LinkedOptionPerson](bytes)
+
+    p2 should equal(p)
+  }
+
+  test("Linked Option Person - 2") {
+    val p: LinkedOptionPerson = LinkedOptionPerson(Person("one", 1, "1"), Some(Person("two", 2, "2")))
+
+    val bytes: BYTES = serialize(p)
+    val p2: LinkedOptionPerson = deserialize[LinkedOptionPerson](bytes)
+
+    p2 should equal(p)
+  }
+
+  test("Person With Child - 1") {
+    val p: PersonWithChild = PersonWithChild("one", 1, "1", None)
+
+    val bytes: BYTES = serialize(p)
+    val p2: PersonWithChild = deserialize[PersonWithChild](bytes)
+
+    p2 should equal(p)
+  }
+
+  test("Person With Child - 2") {
+    val p: PersonWithChild = PersonWithChild("one", 1, "1", Some(PersonWithChild("two", 2, "2")))
+
+    val bytes: BYTES = serialize(p)
+    val p2: PersonWithChild = deserialize[PersonWithChild](bytes)
+
+    p2 should equal(p)
+  }
+
   //===============================================================================================
   // Option Testing
   //===============================================================================================
   case class OptionalFoo(string: Option[String], bool: Option[Boolean], char: Option[Char], int: Option[Int], long: Option[Long])
-  
+
   test("Option Handling - None") {
     val foo: OptionalFoo = OptionalFoo(None, None, None, None, None)
     val bytes: BYTES = serialize(foo)
     val foo2: OptionalFoo = deserialize[OptionalFoo](bytes)
-    
+
     foo should equal (foo2)
   }
-  
+
   test("Option Handling - Some") {
     val foo: OptionalFoo = OptionalFoo(Some("Hello World!"), Some(true), Some('A'), Some(123), Some(456L))
     val bytes: BYTES = serialize(foo)
     val foo2: OptionalFoo = deserialize[OptionalFoo](bytes)
-    
+
     foo should equal (foo2)
   }
 
@@ -498,29 +569,29 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers with AppendedClues {
     foo.int should be theSameInstanceAs foo2.int
     foo.long should be theSameInstanceAs foo2.long
   }
-  
+
   case class OptionalFooWithDefaults(string: Option[String] = Some("default"), bool: Option[Boolean] = Some(false), int: Option[Int] = Some(123456789), long: Option[Long] = Some(987654321L))
-  
+
   test("Option Handling with Defaults - None") {
     val foo: OptionalFooWithDefaults = OptionalFooWithDefaults(None, None)
     val bytes: BYTES = serialize(foo)
     val foo2: OptionalFooWithDefaults = deserialize[OptionalFooWithDefaults](bytes)
-    
+
     if (!ignoreNullRetainTest) foo should equal (foo2)
   }
-  
+
   test("Option Handling with Defaults - Some") {
     val foo: OptionalFooWithDefaults = OptionalFooWithDefaults(Some("Hello World!"), Some(true), Some(123), Some(456L))
     val bytes: BYTES = serialize(foo)
     val foo2: OptionalFooWithDefaults = deserialize[OptionalFooWithDefaults](bytes)
-    
+
     foo should equal (foo2)
   }
-  
+
   //===============================================================================================
   // Complex Object Testing
   //===============================================================================================
-  
+
   test("Foo") {
     val foo: Foo = Foo()
     val bytes: BYTES = serialize(foo)
@@ -529,105 +600,162 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers with AppendedClues {
     // TestMinimalJSON doesn't play well with this
     if (!ignoreNullRetainTest) {
       foo2.foo should equal (foo.foo)
-      
+
       foo2 should equal (foo)
     }
-    
+
     // Iterable doesn't have a CanBuildFrom so we default to using a Vector
-    require(foo2.bar.baz.iterable.isInstanceOf[Vector[String]])
+    require(foo2.bar.baz.iterable.isInstanceOf[Vector[String]], s"Got ${foo2.bar.baz.iterable.getClass.getName} but expected a Vector")
   }
-  
+
   test("Foo - Skipping unknown fields") {
     val foo: Foo = Foo()
     val bytes: BYTES = serialize(foo)
     val emptyFoo: MostlyEmptyFoo = deserialize[MostlyEmptyFoo](bytes)
-    
+
     emptyFoo.bar should equal (foo.bar)
   }
-  
+
+  test("Bar") {
+    val bar: Bar = Bar()
+    val bytes: BYTES = serialize(bar)
+    val bar2: Bar = deserialize[Bar](bytes)
+
+    bar2 should equal (bar)
+  }
+
+  test("Bar with next") {
+    val bar: Bar = Bar(next = Some(Bar("next", 321, Some(Bar()))))
+
+    val bytes: BYTES = serialize(bar)
+    val bar2: Bar = deserialize[Bar](bytes)
+
+    bar2 should equal(bar)
+  }
+
+
+  //===============================================================================================
+  // Map Testing
+  //===============================================================================================
+
+  case class WithMap(map: Map[String, Int])
+
+  test("WithMap") {
+    val obj: WithMap = WithMap(Map("one" -> 1, "two" -> 2, "three" -> 3))
+
+    val bytes: BYTES = serialize(obj)
+    val obj2: WithMap = deserialize[WithMap](bytes)
+
+    obj2 shouldBe obj
+  }
+
+  //===============================================================================================
+  // Tuple Testing
+  //===============================================================================================
+  case class WithTuple(two: (String, Int), three: (String, Int, Boolean))
+
+  test("WithTuple") {
+    val obj: WithTuple = WithTuple(("two", 2), ("three", 3, true))
+
+    val bytes: BYTES = serialize(obj)
+    val obj2: WithTuple = deserialize[WithTuple](bytes)
+
+    obj2 shouldBe obj
+  }
+
+  case class WithTuple2(two: (String, Int))
+
+  test("WithTuple2") {
+    val obj: WithTuple2 = WithTuple2(("two", 2))
+
+    val bytes: BYTES = serialize(obj)
+    val obj2: WithTuple2 = deserialize[WithTuple2](bytes)
+
+    obj2 shouldBe obj
+  }
+
   //===============================================================================================
   // Annotated Object Testing
   //===============================================================================================
-  
+
   case class Car (year: Int = 1234, make: String = "default make", model: String = "default model")
-  
+
   case class CarReversed(
     @Field(3, "model") the_model: String,
     @Field(2, "make") the_make: String,
     @Field(1, "year") the_year: Int
   )
-  
+
   case class CarWithJustYear(year: Int = 4321)
-  
+
   test("Car -> CarReversed") {
     val car: Car = Car(2005, "Subaru", "Legacy")
     val bytes: BYTES = serialize(car)
     val car2: CarReversed = deserialize[CarReversed](bytes)
-    
+
     car2.the_year should equal (car.year)
     car2.the_make should equal (car.make)
     car2.the_model should equal (car.model)
   }
-  
+
   test("CarReversed -> Car") {
     val car: CarReversed = CarReversed("Legacy", "Subaru", 2005)
     val bytes: BYTES = serialize(car)
     val car2: Car = deserialize[Car](bytes)
-    
+
     car2.year should equal (car.the_year)
     car2.make should equal (car.the_make)
     car2.model should equal (car.the_model)
   }
-  
+
   //===============================================================================================
   // Nulls
   //===============================================================================================
   def ignoreNullRetainTest: Boolean = false
-  
+
   test("Car with nulls should retain nulls") {
     val car: Car = Car(2005, null, null)
     val bytes: BYTES = serialize(car)
     val car2: Car = deserialize[Car](bytes)
-    
+
     // In TestMinimalJSON we ignore this check since we don't output nulls
     // and end up using the default values
     if (!ignoreNullRetainTest) car should equal (car2)
   }
-  
+
   test("Default values should be used for missing fields") {
     val car: CarWithJustYear = CarWithJustYear(2005)
     val bytes: BYTES = serialize(car)
     val car2: Car = deserialize[Car](bytes)
-    
+
     car2.year should equal (2005)
     car2.make should equal ("default make")
     car2.model should equal ("default model")
   }
-  
+
   //===============================================================================================
   // Case-like Classes
   //===============================================================================================
-  
+
   class CaseLike(val name: String, var age: Int)
-  
+
   test("Case-Like Class") {
     val caseLike = new CaseLike("foo", 321)
-    
+
     val bytes: BYTES = serialize(caseLike)
     val caseLike2: CaseLike = deserialize[CaseLike](bytes)
-    
+
     caseLike2.name should equal (caseLike.name)
     caseLike2.age should equal (caseLike.age)
   }
 
-
   test("FooJavaBeanContainer") {
     val container: FooJavaBeanContainer = new FooJavaBeanContainer()
-    
+
     val bytes: BYTES = serialize(container)
     val container2: FooJavaBeanContainer = deserialize[FooJavaBeanContainer](bytes)
   }
-      
+
   //===============================================================================================
   // Java Beans
   //===============================================================================================
@@ -648,10 +776,10 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers with AppendedClues {
     foo.setIgnoredField2("ignored2")
     foo.setIgnoredField4("ignored4")
     foo.setShadowedInterfaceMethod("not transient")
-    
+
     val bytes: BYTES = serialize(foo)
     val foo2: FooJavaBean = deserialize[FooJavaBean](bytes)
-    
+
     foo2.getName should equal (foo.getName)
     foo2.getNumber should equal (foo.getNumber)
     foo2.isBool should equal (foo.isBool)
@@ -661,52 +789,54 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers with AppendedClues {
     foo2.getListWithoutSetter.asScala should equal (foo.getListWithoutSetter.asScala)
     foo2.getIgnoredField1 should equal (null)
     foo2.getIgnoredField2 should equal (null)
-    
+
     // This will fail until proper java transient field detection is in place
     foo2.getIgnoredField4 should equal (null)
 
     foo2.getShadowedInterfaceMethod should equal("not transient")
 
   }
-  
+
   //===============================================================================================
   // Java Beans Immutable
   //===============================================================================================
   test("FooJavaBeanImmutable") {
-    val foo: FooJavaBeanImmutable = new FooJavaBeanImmutable("Hello World", 123, true, FooEnum.Bar, Vector("aa", "bb", "cc").asJava)
-    
+    val foo: FooJavaBeanImmutable = new FooJavaBeanImmutable("base", new java.math.BigInteger("991234567890"), "Hello World", 123, true, FooEnum.Bar, Vector("aa", "bb", "cc").asJava)
+
     val bytes: BYTES = serialize(foo)
     val foo2: FooJavaBeanImmutable = deserialize[FooJavaBeanImmutable](bytes)
-    
+
     foo2.getName should equal (foo.getName)
     foo2.getNumber should equal (foo.getNumber)
     foo2.isBool should equal (foo.isBool)
     foo2.getFooEnum should equal (foo.getFooEnum)
     foo2.getList.asScala should equal (foo.getList.asScala)
+    foo2.base should equal (foo.base)
+    foo2.bigInt should equal (foo.bigInt)
   }
-  
+
   //===============================================================================================
   // Serializing a Trait based on a fields from a Case Class
   //===============================================================================================
-  
+
   trait AbstractPerson {
     def name: String
     def age: Int
     def linked: ConcretePerson // TODO: make this work with an AbstractPerson type
   }
-  
+
   case class ConcretePerson (name: String, age: Int, linked: ConcretePerson) extends AbstractPerson
   class ConcretePersonAlt (val name: String, val age: Int, val linked: ConcretePerson) extends AbstractPerson
-  
+
   test("Iface / Concrete") {
     implicit val ser: Serializer[AbstractPerson] = ObjectSerializer.forInterface[AbstractPerson, ConcretePerson]()
     implicit val deser: Deserializer[ConcretePerson] = ObjectDeserializer[ConcretePerson]()
 
     val person: AbstractPerson = new ConcretePersonAlt("foo", 123, new ConcretePerson("linked", 321, null))
-    
+
     val bytes: BYTES = serialize(person)
     val concrete: ConcretePerson = deserialize[ConcretePerson](bytes)
-    
+
     concrete.name should equal (person.name)
     concrete.age should equal (person.age)
     concrete.linked.name should equal (person.linked.name)
@@ -714,44 +844,44 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers with AppendedClues {
     concrete.linked.linked should equal (null)
 
   }
-  
+
   //===============================================================================================
   // Specifying a Serializer/Deserializer via @Field annotations
   //===============================================================================================
-  
+
   case class NonCompressedNums(
     @Field(1, fm.serializer.Primitive.fixedInt) fixedInt: Int,
     @Field(2, fm.serializer.Primitive.fixedLong) fixedLong: Long
   )
-  
+
   test("Specifying FixedInt/FixedLong instead of the default int/long serializer") {
     val obj = NonCompressedNums(123, 321L)
-    
+
     val bytes: BYTES = serialize(obj)
-    
+
 //    if (bytes.isInstanceOf[Array[Byte]]) {
 //      val b: Array[Byte] = bytes.asInstanceOf[Array[Byte]]
 //      println("BYTES: "+b.toSeq)
 //    }
 
     val obj2: NonCompressedNums = deserialize[NonCompressedNums](bytes)
-    
+
     obj2.fixedInt should equal (obj.fixedInt)
     obj2.fixedLong should equal (obj.fixedLong)
   }
-  
+
   //===============================================================================================
   // Nested Collection Serializer (GitHub issue #5: https://github.com/frugalmechanic/fm-serializer/issues/5)
   //===============================================================================================
-  
+
   case class Node(name: String, children: IndexedSeq[Node] = Vector.empty)
-  
+
   test("Nested Nodes - Single Node") {
     val node: Node = Node("one", children = Vector(Node("foo"), Node("bar")))
-    
+
     val bytes: BYTES = serialize(node)
     val node2: Node = deserialize[Node](bytes)
-    
+
     node should equal (node2)
   }
 
@@ -812,6 +942,23 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers with AppendedClues {
   }
 
 
+  //===============================================================================================
+  // fm.common.IP
+  //===============================================================================================
+  if (supportsPrimitives) test("IP Should serialize as a long") {
+    val ip: IP = IP("255.255.255.255")
+    val long: Long = 4294967295L
+
+    val ipBytes: BYTES = serialize(ip)
+
+    deserialize[IP](ipBytes) should equal(ip)
+    deserialize[Long](ipBytes) should equal(long)
+
+    val longBytes: BYTES = serialize(long)
+
+    deserialize[IP](longBytes) should equal(ip)
+    deserialize[Long](longBytes) should equal(long)
+  }
 
 
   //===============================================================================================
@@ -834,7 +981,7 @@ trait TestSerializer[BYTES] extends FunSuite with Matchers with AppendedClues {
   }
 
   //===============================================================================================
-  // Overriden AnyVal Classes
+  // Overridden AnyVal Classes
   //===============================================================================================
 
   case class IPHolder(ip: IP)

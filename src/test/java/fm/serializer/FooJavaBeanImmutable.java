@@ -3,14 +3,19 @@ package fm.serializer;
 import java.util.Collections;
 import java.util.List;
 
-public class FooJavaBeanImmutable {
+public class FooJavaBeanImmutable extends FooJavaBeanImmutableBase {
   protected String name;
   protected int number;
   protected Boolean bool;
   protected FooEnum fooEnum;
   protected List<String> list;
 
-  public FooJavaBeanImmutable(final String name, final int number, final Boolean bool, final FooEnum fooEnum, final List<String> list) {
+  // Default no-args constructor (just like XJC Immutable plugin)
+  public FooJavaBeanImmutable() {
+    super();
+  }
+  public FooJavaBeanImmutable(final String base, final java.math.BigInteger bigInt, final String name, final int number, final Boolean bool, final FooEnum fooEnum, final List<String> list) {
+    super(base, bigInt);
     this.name = name;
     this.number = number;
     this.bool = bool;

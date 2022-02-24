@@ -46,7 +46,7 @@ final class JavaIterableSerializer[T, Col <: JavaIterable[T]](implicit elemSeria
     private def serializeIterable(out: NestedOutput, col: JavaIterable[T]): Unit = {
       val it: JavaIterator[T] = col.iterator()
       while (it.hasNext) {
-        elemSerializer.serializeNested(out, it.next)
+        elemSerializer.serializeNested(out, it.next())
       }
     }
   }

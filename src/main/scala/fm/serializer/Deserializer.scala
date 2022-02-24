@@ -17,12 +17,8 @@ package fm.serializer
 
 import fm.serializer.bson.BsonImplicits
 
-object Deserializer extends DeserializerLowPrioImplicits with PrimitiveImplicits with CommonTypeImplicits with BsonImplicits {
+object Deserializer extends PrimitiveImplicits with CommonTypeImplicits with BsonImplicits with DeserializerLowPrioImplicits {
   
-}
-
-trait DeserializerLowPrioImplicits {
-  implicit def makeDeserializer[T]: Deserializer[T] = macro Macros.makeDeserializer[T]
 }
 
 trait Deserializer[@specialized T] extends RawDeserializer[T] with NestedDeserializer[T] {  

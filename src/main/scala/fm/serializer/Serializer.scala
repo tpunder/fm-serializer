@@ -17,18 +17,13 @@ package fm.serializer
 
 import fm.serializer.bson.BsonImplicits
 
-object Serializer extends SerializerLowPrioImplicits with PrimitiveImplicits with CommonTypeImplicits with BsonImplicits {
-  /**
-   * Call this for creating an "implicit val" that can be picked up by serialize() calls
-   */
-  def make[T]: Serializer[T] = macro Macros.makeSerializerNoImplicits[T]
-}
+object Serializer extends SerializerObj with PrimitiveImplicits with CommonTypeImplicits with BsonImplicits with SerializerLowPrioImplicits {
 
-trait SerializerLowPrioImplicits {
-  /**
-   * This should NOT be called directly (use Serializer.make instead).
-   */
-  implicit def implicitMakeSerializer[T]: Serializer[T] = macro Macros.makeSerializerAllowImplicits[T]
+  // Moved into SerializerObj to support both Scala 2 and 3
+//  /**
+//   * Call this for creating an "implicit val" that can be picked up by serialize() calls
+//   */
+//  def make[T]: Serializer[T] = macro Macros.makeSerializerNoImplicits[T]
 }
 
 trait Serializer[@specialized T] extends RawSerializer[T] with NestedSerializer[T] with FieldSerializer[T] {

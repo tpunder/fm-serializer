@@ -141,7 +141,7 @@ final class LinkedByteArrayOutputStream() extends OutputStream {
     val byteArray: Array[Byte] = new Array[Byte](size)
     var offset: Int = 0
     
-    buffers.foreach{ buf: Buffer =>
+    buffers.foreach{ (buf: Buffer) =>
       val len: Int = buf.offset - buf.start
       if (len > 0) {
         System.arraycopy(buf.buffer, buf.start, byteArray, offset, len)

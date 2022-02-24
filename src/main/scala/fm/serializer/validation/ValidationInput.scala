@@ -76,14 +76,14 @@ final class ValidationInput(self: Input, options: ValidationOptions) extends Inp
   override def readNestedFixedLong(): Long = handlePrimitive(0L){ self.readNestedFixedLong() }
 
   override def readNestedObject[T](f: FieldInput => T): T = handleObject(null.asInstanceOf[T]) {
-    self.readNestedObject{ other: FieldInput =>
+    self.readNestedObject{ (other: FieldInput) =>
       assertSelf(other)
       f(this)
     }
   }
 
   override def readNestedCollection[T](f: CollectionInput => T): T = handleCollection(null.asInstanceOf[T]) {
-    self.readNestedCollection{ other: CollectionInput =>
+    self.readNestedCollection{ (other: CollectionInput) =>
       assertSelf(other)
       f(this)
     }
@@ -106,14 +106,14 @@ final class ValidationInput(self: Input, options: ValidationOptions) extends Inp
   override def readRawFixedLong(): Long = handlePrimitive(0L){ self.readRawFixedLong() }
 
   override def readRawObject[T](f: FieldInput => T): T = handleObject(null.asInstanceOf[T]) {
-    self.readRawObject{ other: FieldInput =>
+    self.readRawObject{ (other: FieldInput) =>
       assertSelf(other)
       f(this)
     }
   }
 
   override def readRawCollection[T](f: CollectionInput => T): T = handleCollection(null.asInstanceOf[T]) {
-    self.readRawCollection{ other: CollectionInput =>
+    self.readRawCollection{ (other: CollectionInput) =>
       assertSelf(other)
       f(this)
     }

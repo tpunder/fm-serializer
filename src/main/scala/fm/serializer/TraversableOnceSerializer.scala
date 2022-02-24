@@ -43,11 +43,11 @@ final class TraversableOnceSerializer[@specialized T, Col <: TraversableOnce[T]]
     
     private def serializeIterable(out: NestedOutput, col: Iterable[T]): Unit = {
       val it: Iterator[T] = col.iterator
-      while (it.hasNext) elemSerializer.serializeNested(out, it.next)
+      while (it.hasNext) elemSerializer.serializeNested(out, it.next())
     }
     
     private def serializeTraversableOnce(out: NestedOutput, col: Col): Unit = {
-      col.foreach{ elem: T => elemSerializer.serializeNested(out, elem) }
+      col.foreach{ (elem: T) => elemSerializer.serializeNested(out, elem) }
     }
   }
 }

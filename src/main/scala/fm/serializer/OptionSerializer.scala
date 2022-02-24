@@ -15,7 +15,7 @@
  */
 package fm.serializer
 
-final case class OptionSerializer[A](implicit ser: Serializer[A]) extends Serializer[Option[A]] {
+final case class OptionSerializer[A]()(implicit ser: Serializer[A]) extends Serializer[Option[A]] {
   
   def serializeRaw(output: RawOutput, v: Option[A]): Unit = if (v.isDefined) ser.serializeRaw(output, v.get)
   def serializeNested(output: NestedOutput, v: Option[A]): Unit = if (v.isDefined) ser.serializeNested(output, v.get)  

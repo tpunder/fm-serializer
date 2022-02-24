@@ -65,7 +65,7 @@ abstract class ProtobufInput extends Input {
   def readFieldName(): String = ???
   
   // Skip an unknown field
-  final def skipUnknownField() {
+  final def skipUnknownField(): Unit = {
     //println(s"skipUnknown for tag: $lastTag   fieldNumber: ${WireFormat.getTagFieldNumber(lastTag)}")
     skipField(lastTag) 
   }
@@ -229,7 +229,7 @@ abstract class ProtobufInput extends Input {
   
   // Collections
   def readNestedCollection[T](f: CollectionInput => T): T = {
-    readLengthDelimited{ input: Input => withTagTypeChecks(false){ f(input) } }
+    readLengthDelimited{ (input: Input) => withTagTypeChecks(false){ f(input) } }
   }
   
   //
@@ -245,7 +245,7 @@ abstract class ProtobufInput extends Input {
   //
   protected def readTag(): Int
   protected def readRawByte(): Byte
-  protected def skipRawBytes(size: Int)
+  protected def skipRawBytes(size: Int): Unit
   protected def readRawBytes(size: Int): Array[Byte]
   protected def readLengthDelimited[T](f: Input => T): T
 
@@ -378,7 +378,7 @@ abstract class ProtobufInput extends Input {
   /** Read a raw Varint from the stream. */
   private def readRawVarint64(): Long = {
     var shift: Int = 0
-    var result: Long = 0l
+    var result: Long = 0L
     
     while (shift < 64) {
       val b = readRawByte()

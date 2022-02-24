@@ -1,36 +1,38 @@
 package fm.serializer.json
 
-import org.scalatest.{FunSuite, Matchers, PrivateMethodTester}
+import org.scalatest.PrivateMethodTester
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-final class TestJSONByteArrayInput extends FunSuite with Matchers with PrivateMethodTester {
+final class TestJSONByteArrayInput extends AnyFunSuite with Matchers with PrivateMethodTester {
   private val countLeadingBitsInByteMethod: PrivateMethod[Int] = PrivateMethod[Int](Symbol("countLeadingBitsInByte"))
 
   test("countLeadingBitsInByte") {
-    (0 until 128).foreach { i: Int =>
+    (0 until 128).foreach { (i: Int) =>
       JSONByteArrayInput invokePrivate countLeadingBitsInByteMethod(i) shouldBe 0
     }
 
-    (128 until 192).foreach { i: Int =>
+    (128 until 192).foreach { (i: Int) =>
       JSONByteArrayInput invokePrivate countLeadingBitsInByteMethod(i) shouldBe 1
     }
 
-    (192 until 224).foreach { i: Int =>
+    (192 until 224).foreach { (i: Int) =>
       JSONByteArrayInput invokePrivate countLeadingBitsInByteMethod(i) shouldBe 2
     }
 
-    (224 until 240).foreach { i: Int =>
+    (224 until 240).foreach { (i: Int) =>
       JSONByteArrayInput invokePrivate countLeadingBitsInByteMethod(i) shouldBe 3
     }
 
-    (240 until 248).foreach { i: Int =>
+    (240 until 248).foreach { (i: Int) =>
       JSONByteArrayInput invokePrivate countLeadingBitsInByteMethod(i) shouldBe 4
     }
 
-    (248 until 252).foreach { i: Int =>
+    (248 until 252).foreach { (i: Int) =>
       JSONByteArrayInput invokePrivate countLeadingBitsInByteMethod(i) shouldBe 5
     }
 
-    (252 until 254).foreach { i: Int =>
+    (252 until 254).foreach { (i: Int) =>
       JSONByteArrayInput invokePrivate countLeadingBitsInByteMethod(i) shouldBe 6
     }
 

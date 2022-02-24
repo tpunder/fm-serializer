@@ -36,7 +36,7 @@ final class CanBuildFromDeserializer[Elem,Col](implicit cbf: CanBuildFrom[_,Elem
       builder += elemDeser.deserializeNested(input)
     }
     
-    builder.result
+    builder.result()
   }
   
 }

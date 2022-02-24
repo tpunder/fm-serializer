@@ -1,5 +1,12 @@
 
 //
+// Enable Sonatype snapshots repository for SNAPSHOT versions only
+//
+resolvers ++= {
+  if (version.value.trim.endsWith("SNAPSHOT")) Resolver.sonatypeOssRepos("snapshots") else Nil
+}
+
+//
 // For sbt-sonatype
 //
 ThisBuild / organization := "com.frugalmechanic"

@@ -45,7 +45,7 @@ final class StringMapCanBuildFromDeserializer[V,Col](implicit cbf: CanBuildFrom[
       name = input.readFieldName()
     }
     
-    builder.result
+    builder.result()
   }
   
 }

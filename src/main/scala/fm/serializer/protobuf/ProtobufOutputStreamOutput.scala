@@ -368,7 +368,7 @@ final class ProtobufOutputStreamOutput(private var os: OutputStream) extends Out
   }
   
   /** Write a little-endian 32-bit integer. */
- final  def writeRawLittleEndian32(value: Int): Unit = {
+  final def writeRawLittleEndian32(value: Int): Unit = {
     writeRawByte((value       ) & 0xFF)
     writeRawByte((value >>>  8) & 0xFF)
     writeRawByte((value >>> 16) & 0xFF)

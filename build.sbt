@@ -2,9 +2,9 @@ name := "fm-serializer"
 
 description := "Scala Macro Based Serialization"
 
-scalaVersion := "2.12.13"
+scalaVersion := "3.3.0"
 
-crossScalaVersions := Seq("2.11.12", "2.12.13")
+crossScalaVersions := Seq("3.3.0", "2.13.10", "2.12.17", "2.11.12")
 
 // Needed for the JavaBean tests to work
 compileOrder := CompileOrder.JavaThenScala
@@ -16,13 +16,25 @@ scalacOptions := Seq(
   "-language:implicitConversions,experimental.macros",
   "-feature",
   "-Xlint",
-  "-Ywarn-unused-import",
-  "-Xelide-below", "OFF"
-) ++ (if (scalaVersion.value.startsWith("2.12")) Seq(
+  "-Xelide-below", "OFF",
+) ++ (if (scalaVersion.value.startsWith("2.12") || scalaVersion.value.startsWith("2.13")) Seq(
   // Scala 2.12 specific compiler flags
   "-opt:l:inline",
-  "-opt-inline-from:<sources>"
+  "-opt-inline-from:<sources>",
+) else Nil) ++ (if (scalaVersion.value.startsWith("3.")) Seq(
+  // Scala 3 specific compiler flags
+  "-Xcheck-macros",
 ) else Nil)
+
+// Due to Scala Standard Library changes in 2.13 some code is specific to
+// Scala 2.12 and below (e.g. 2.11, 2.12) and some code is specific to 2.13
+// and higher (e.g. 2.13, 3.0).
+Compile / unmanagedSourceDirectories += {   
+  CrossVersion.partialVersion(scalaVersion.value) match {
+    case Some((2, n)) if n < 13 => sourceDirectory.value / "main" / "scala-2.12-"
+    case _ => sourceDirectory.value / "main" / "scala-2.13+"
+  }
+}
 
 // Need to make sure any Java sources are compiled to 1.8 classfile format
 javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
@@ -30,12 +42,17 @@ javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
 // We don't want log buffering when running ScalaTest
 Test / logBuffered := false
 
-libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
+libraryDependencies ++= {
+  CrossVersion.partialVersion(scalaVersion.value) match {
+    case Some((2, n)) => Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value)
+    case _ => Nil
+  }
+}
 
 // SCALA Libraries
 libraryDependencies ++= Seq(
-  "com.frugalmechanic" %% "fm-common" % "0.51.0",
-  "com.frugalmechanic" %% "fm-json" % "0.5.0"
+  "com.frugalmechanic" %% "fm-common" % "1.0.0-SNAPSHOT",
+  "com.frugalmechanic" %% "fm-json" % "1.0.0-SNAPSHOT"
 )
 
 // JAVA Libraries
@@ -49,8 +66,8 @@ libraryDependencies ++= Seq(
   "org.mongodb" % "bson" % "3.3.0"
 )
 
-libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.5" % "test"
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.15" % Test
 
 publishTo := sonatypePublishToBundle.value
 
-ThisBuild / versionScheme := Some("semver-spec")
+//ThisBuild / versionScheme := Some("early-semver")
