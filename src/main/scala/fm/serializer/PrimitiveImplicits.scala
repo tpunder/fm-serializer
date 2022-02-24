@@ -15,6 +15,8 @@
  */
 package fm.serializer
 
+import java.nio.ByteBuffer
+
 object PrimitiveImplicits extends PrimitiveImplicits
 
 /**
@@ -48,4 +50,17 @@ trait PrimitiveImplicits {
   implicit val javaInt:     SimpleSerializer[JavaInt]     = int.map[JavaInt](null)         { _.intValue     } { JavaInt.valueOf }
   implicit val javaLong:    SimpleSerializer[JavaLong]    = long.map[JavaLong](null)       { _.longValue    } { JavaLong.valueOf }
   implicit val javaChar:    SimpleSerializer[JavaChar]    = char.map[JavaChar](null)       { _.charValue    } { JavaChar.valueOf }
+
+  // Note: Serializing the same ByteBuffer instance concurrently is not thread-safe due to modification of the internal
+  //       ByteBuffer state. We always restore this state when we are done serializing so non-concurrent repeated
+  //       serialization is possible.
+  implicit val byteBuffer:  SimpleSerializer[ByteBuffer]  = byteArray.map[ByteBuffer](null){ byteBufferToByteArray } { ByteBuffer.wrap(_) }
+
+  private def byteBufferToByteArray(buf: ByteBuffer): Array[Byte] = {
+    val pos: Int = buf.position() // Save the original position
+    val arr: Array[Byte] = new Array(buf.remaining())
+    buf.get(arr) // There is no bulk absolute get method so we must rely on the relative version which modifies the position
+    buf.position(pos) // Restore the original position
+    arr
+  }
 }

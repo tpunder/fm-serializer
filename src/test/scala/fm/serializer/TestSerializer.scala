@@ -19,6 +19,7 @@ import fm.common.{IP, ImmutableArray, ImmutableDate, UUID}
 import fm.serializer.validation.{Validation, ValidationError, ValidationOptions, ValidationResult}
 import java.io.File
 import java.math.{BigDecimal => JavaBigDecimal, BigInteger => JavaBigInteger}
+import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets.UTF_8
 import java.time.{LocalDate, LocalDateTime}
 import java.util.{Calendar, Date}
@@ -116,7 +117,8 @@ object TestSerializer {
     bsonTypes: BsonTypes = BsonTypes(),
     fmCommonTypes: FMCommonTypes = FMCommonTypes(),
     supplementaryCharacters: SupplementaryCharacters = SupplementaryCharacters(),
-    bigIntegerAndDecimalTypes: BigIntegerAndDecimalTypes = BigIntegerAndDecimalTypes()
+    bigIntegerAndDecimalTypes: BigIntegerAndDecimalTypes = BigIntegerAndDecimalTypes(),
+    binaryTypes: BinaryTypes = BinaryTypes()
   )
 
   // Supplementary Characters are represented in Java as 2 characters but need
@@ -186,6 +188,11 @@ object TestSerializer {
     scalaBigIntNull: BigInt = null,
     scalaBigDecimal: BigDecimal = BigDecimal("12345678901234.5678901234567890"),
     scalaBigDecimalNull: BigDecimal = null
+  )
+
+  case class BinaryTypes(
+    bytes: ByteBuffer = ByteBuffer.wrap("Hello World!".getBytes(UTF_8))
+    //moreBytes: ByteBuffer = ByteBuffer.wrap(("Hello \r\t\n \\ / \" \b\f oneByte: \u0024 twoByte: \u00A2 threeByte: \u20AC fourByteSupplementary: \uD83D\uDCA5  World!").getBytes(UTF_8))
   )
 
   case class MostlyEmptyFoo(@Field(19) bar: Bar)
