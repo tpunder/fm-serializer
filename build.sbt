@@ -1,5 +1,3 @@
-FMPublic
-
 name := "fm-serializer"
 
 description := "Scala Macro Based Serialization"
@@ -30,7 +28,7 @@ scalacOptions := Seq(
 javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
 
 // We don't want log buffering when running ScalaTest
-logBuffered in Test := false
+Test / logBuffered := false
 
 libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
 
@@ -52,3 +50,7 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.5" % "test"
+
+publishTo := sonatypePublishToBundle.value
+
+ThisBuild / versionScheme := Some("semver-spec")
