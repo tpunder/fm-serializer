@@ -27,7 +27,7 @@ object Macros {
   
   def makeSimpleObjectSerializer[T: c.WeakTypeTag](c: Context)(): c.Expr[SimpleObjectSerializer[T]] = wrap(c, s"makeSimpleObjectSerializer[${c.weakTypeOf[T]}]") {
     
-    c.universe.reify { SimpleObjectSerializer[T]()(makeObjectSerializer[T](c).splice, makeObjectDeserializer[T](c).splice) }
+    c.universe.reify { SimpleObjectSerializer[T]()(makeObjectSerializer[T](c)().splice, makeObjectDeserializer[T](c)().splice) }
   }
   
   def makeObjectSerializerFromFields[T: c.WeakTypeTag](c: Context)(field: c.Expr[Field], fields: c.Expr[Field]*): c.Expr[ObjectSerializer[T]] = wrap(c, s"makeObjectSerializer[${c.weakTypeOf[T]}]") {

@@ -15,11 +15,12 @@
  */
 package fm.serializer
 
-object SimpleObjectSerializer {
-  def make[T](): SimpleObjectSerializer[T] = macro Macros.makeSimpleObjectSerializer[T]
+object SimpleObjectSerializer extends SimpleObjectSerializerObj {
+  // Macro is in SimpleObjectSerializerObj to support both Scala 2 and 3
+  //def make[T](): SimpleObjectSerializer[T] = macro Macros.makeSimpleObjectSerializer[T]
 }
 
-final case class SimpleObjectSerializer[T](implicit ser: ObjectSerializer[T], deser: ObjectDeserializer[T]) extends ObjectSerializer[T] with ObjectDeserializer[T] with SimpleSerializer[T] {
+final case class SimpleObjectSerializer[T]()(implicit ser: ObjectSerializer[T], deser: ObjectDeserializer[T]) extends ObjectSerializer[T] with ObjectDeserializer[T] with SimpleSerializer[T] {
   final def defaultValue: T = deser.defaultValue
   final def deserializeRaw(input: RawInput): T = deser.deserializeRaw(input)
   final def deserializeNested(input: NestedInput): T = deser.deserializeNested(input)

@@ -22,7 +22,7 @@ import org.bson.{BsonBinary, BsonBinarySubType}
 import org.bson.types.{MaxKey, MinKey, ObjectId}
 
 final class UUIDSerializer extends BsonSerializer[UUID] {
-  protected val normal: SimpleSerializer[UUID] = Primitive.string.map[UUID](defaultValue){ id: UUID => id.toHex }{ hex: String => UUID(hex) }
+  protected val normal: SimpleSerializer[UUID] = Primitive.string.map[UUID](defaultValue){ (id: UUID) => id.toHex }{ (hex: String) => UUID(hex) }
 
   def defaultValue: UUID = null
   def deserializeRaw(input: BSONInput): UUID = if (input.nextValueIsNull) null else fromBsonBinary(input.readRawBsonBinary())
@@ -36,7 +36,7 @@ final class UUIDSerializer extends BsonSerializer[UUID] {
 }
 
 final class ObjectIdSerializer extends BsonSerializer[ObjectId] {
-  protected val normal: SimpleSerializer[ObjectId] = Primitive.string.map[ObjectId](defaultValue){ id: ObjectId => id.toHexString }{ hex: String => new ObjectId(hex) }
+  protected val normal: SimpleSerializer[ObjectId] = Primitive.string.map[ObjectId](defaultValue){ (id: ObjectId) => id.toHexString }{ (hex: String) => new ObjectId(hex) }
 
   def defaultValue: ObjectId = null
   def deserializeRaw(input: BSONInput): ObjectId = if (input.nextValueIsNull) null else input.readRawObjectId()
@@ -47,7 +47,7 @@ final class ObjectIdSerializer extends BsonSerializer[ObjectId] {
 }
 
 final class DateSerializer extends BsonSerializer[Date] {
-  protected val normal: SimpleSerializer[Date] = Primitive.long.map[Date](defaultValue){ date: Date => date.getTime }{ time: Long => new Date(time) }
+  protected val normal: SimpleSerializer[Date] = Primitive.long.map[Date](defaultValue){ (date: Date) => date.getTime }{ (time: Long) => new Date(time) }
 
   def defaultValue: Date = null
   def deserializeRaw(input: BSONInput): Date = if (input.nextValueIsNull) null else new Date(input.readRawDateTime())
@@ -58,7 +58,7 @@ final class DateSerializer extends BsonSerializer[Date] {
 }
 
 final class ImmutableDateSerializer extends BsonSerializer[ImmutableDate] {
-  protected val normal: SimpleSerializer[ImmutableDate] = Primitive.long.map[ImmutableDate](defaultValue){ date: ImmutableDate => date.getTime }{ time: Long => new ImmutableDate(time) }
+  protected val normal: SimpleSerializer[ImmutableDate] = Primitive.long.map[ImmutableDate](defaultValue){ (date: ImmutableDate) => date.getTime }{ (time: Long) => new ImmutableDate(time) }
 
   def defaultValue: ImmutableDate = null.asInstanceOf[ImmutableDate]
   def deserializeRaw(input: BSONInput): ImmutableDate = if (input.nextValueIsNull) null else new ImmutableDate(input.readRawDateTime())
@@ -69,7 +69,7 @@ final class ImmutableDateSerializer extends BsonSerializer[ImmutableDate] {
 }
 
 final class MaxKeySerializer extends BsonSerializer[MaxKey] {
-  protected val normal: SimpleSerializer[MaxKey] = Primitive.string.map[MaxKey](defaultValue){ _: MaxKey => "MaxKey" }{ _: String => defaultValue }
+  protected val normal: SimpleSerializer[MaxKey] = Primitive.string.map[MaxKey](defaultValue){ (_: MaxKey) => "MaxKey" }{ (_: String) => defaultValue }
 
   val defaultValue: MaxKey = new MaxKey()
   def deserializeRaw(input: BSONInput): MaxKey = input.readRawMaxKey()
@@ -80,7 +80,7 @@ final class MaxKeySerializer extends BsonSerializer[MaxKey] {
 }
 
 final class MinKeySerializer extends BsonSerializer[MinKey] {
-  protected val normal: SimpleSerializer[MinKey] = Primitive.string.map[MinKey](defaultValue){ _: MinKey => "MinKey" }{ _: String => defaultValue }
+  protected val normal: SimpleSerializer[MinKey] = Primitive.string.map[MinKey](defaultValue){ (_: MinKey) => "MinKey" }{ (_: String) => defaultValue }
 
   val defaultValue: MinKey = new MinKey()
   def deserializeRaw(input: BSONInput): MinKey = input.readRawMinKey()

@@ -16,7 +16,8 @@
 package fm.serializer
 
 import java.util.Random
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 final class TestFMByteArrayOutputStreamDefaultSizes extends TestFMByteArrayOutputStream {
   def InitialArrayCapacity: Int = FMByteArrayOutputStream.DefaultInitialArrayCapacity
@@ -220,7 +221,7 @@ final class TestFMByteArrayOutputStreamSmallBuffers extends TestFMByteArrayOutpu
   
 }
 
-abstract class TestFMByteArrayOutputStream extends FunSuite with Matchers {
+abstract class TestFMByteArrayOutputStream extends AnyFunSuite with Matchers {
   private val UseRandom = false
   
   def InitialArrayCapacity: Int
@@ -521,7 +522,7 @@ abstract class TestFMByteArrayOutputStream extends FunSuite with Matchers {
     //println(os.debugInfo)
     
     os.toByteArray.toVector should equal (Array[Byte](1,2,3,4,5,6))
-    os.lengthPrefixed(4){ os.write(Array[Byte](9,10,11,12,13,14,15)) }{ len: Int => os.write(Array[Byte](len.toByte,8)) }
+    os.lengthPrefixed(4){ os.write(Array[Byte](9,10,11,12,13,14,15)) }{ (len: Int) => os.write(Array[Byte](len.toByte,8)) }
     
     //println("AFTER - lengthPrefixed")
     //println(os.debugInfo)
@@ -534,7 +535,7 @@ abstract class TestFMByteArrayOutputStream extends FunSuite with Matchers {
     os.write(Array[Byte](1,2,3,4,5,6))
     //println(os.debugInfo)
     os.toByteArray.toVector should equal (Array[Byte](1,2,3,4,5,6))
-    os.lengthPrefixed(4){ /* no data written */ }{ len: Int => os.write(Array[Byte](7,8,9,10)) }
+    os.lengthPrefixed(4){ /* no data written */ }{ (len: Int) => os.write(Array[Byte](7,8,9,10)) }
     //println(os.debugInfo)
     os.toByteArray.toVector should equal ((1 to 10).map{ _.toByte }.toVector)
   }
@@ -550,11 +551,11 @@ abstract class TestFMByteArrayOutputStream extends FunSuite with Matchers {
       os.write(Array[Byte](9,10,11,12,13,14,15))
       os.lengthPrefixed(4) {
         os.write(Array[Byte](18,19,20,21,22))
-      } { len: Int =>
+      } { (len: Int) =>
         len should equal(5)
         os.write(Array[Byte](16,17))
       }
-    }{ len: Int =>
+    }{ (len: Int) =>
       len should equal (14)
       os.write(Array[Byte](7,8))
     }
@@ -579,11 +580,11 @@ abstract class TestFMByteArrayOutputStream extends FunSuite with Matchers {
       os.write(Array[Byte](9,10,11,12,13,14,15))
       os.lengthPrefixed(4) {
         os.write(Array[Byte](18,19,20,21,22))
-      } { len: Int =>
+      } { (len: Int) =>
         len should equal(5)
         os.write(Array[Byte](16,17))
       }
-    }{ len: Int =>
+    }{ (len: Int) =>
       len should equal (14)
       os.write(Array[Byte](7,8))
     }

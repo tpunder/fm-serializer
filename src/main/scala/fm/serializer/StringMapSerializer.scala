@@ -58,7 +58,7 @@ final class StringMapSerializer[@specialized V, Col <: TraversableOnce[(String,V
     private def serializeIterable(out: FieldOutput, col: Iterable[(String,V)]): Unit = {
       val it: Iterator[(String,V)] = col.iterator
       while (it.hasNext) {
-        val (name, value) = it.next
+        val (name, value) = it.next()
         valueSerializer.serializeField(out, -1, name, value)
       }
     }

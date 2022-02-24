@@ -18,7 +18,7 @@ package fm.serializer
 import fm.common.Implicits._
 import java.lang.{Iterable => JavaIterable}
 import java.util.{Collection => JavaCollection}
-import scala.collection.generic.{CanBuildFrom, Growable}
+import scala.collection.generic.Growable
 import scala.reflect.macros._
 import scala.util.Try
 
@@ -222,15 +222,15 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     }
   }
 
-  private case class FieldDeserializerInfo(
-    deserializerTermName: TermName, // The variable (actually a val) name of the serializer that we can reference when writing
-    deserializerValDef: ValDef,     // The ValDef that defined the serializer for this field
-    isSetVarName: TermName,         // This tracks whether or not we have read a value for this field
-    isSetVarDef: ValDef,            // This is the ValDef for the isSetVarName
-    readVarName: TermName,          // The name of the variable we will read the value into
-    readVarDef: ValDef,             // The ValDef of the variable we read the value info
-    defaultValue: Tree              // The default value to use for this field if a value isn't read
-  )
+//  private case class FieldDeserializerInfo(
+//    deserializerTermName: TermName, // The variable (actually a val) name of the serializer that we can reference when writing
+//    deserializerValDef: ValDef,     // The ValDef that defined the serializer for this field
+//    isSetVarName: TermName,         // This tracks whether or not we have read a value for this field
+//    isSetVarDef: ValDef,            // This is the ValDef for the isSetVarName
+//    readVarName: TermName,          // The name of the variable we will read the value into
+//    readVarDef: ValDef,             // The ValDef of the variable we read the value info
+//    defaultValue: Tree              // The default value to use for this field if a value isn't read
+//  )
   
   /** 
    * The companion class to Field
@@ -379,7 +379,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
 
     }
 
-    b.result.distinct.toUniqueHashMap
+    b.result().distinct.toUniqueHashMap
   }
 
   /**
@@ -810,23 +810,33 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     val VectorTpe = appliedType(typeOf[Vector[_]], elemTpe)
     val IndexedSeqTpe = appliedType(typeOf[scala.collection.IndexedSeq[_]], elemTpe)
     val ImmutableIndexedSeqTpe = appliedType(typeOf[scala.collection.immutable.IndexedSeq[_]], elemTpe)
+    val SeqTpe = appliedType(typeOf[Seq[_]], elemTpe)
+    val IterableTpe = appliedType(typeOf[Iterable[_]], elemTpe)
 
     val tree: Tree =
       if (tpe <:< VectorTpe) {
         // Note: tpe =:= VectorTpe doesn't work
-        //println(s"DETECTED VECTOR - $tpe - new fm.serializer.VectorDeserializer[$elemTpe, $tpe]()")
+        log(s"DETECTED VECTOR - $tpe - new fm.serializer.VectorDeserializer[$elemTpe, $tpe]()")
         q"new fm.serializer.VectorDeserializer[$elemTpe, $tpe]()"
       } else if (tpe <:< typeOf[fm.common.ImmutableArray[_]]) {
-        //println(s"DETECTED IMMUTABLE_ARRAY - $tpe - new fm.serializer.VectorDeserializer[$elemTpe, $tpe]()")
+        log(s"DETECTED IMMUTABLE_ARRAY - $tpe - new fm.serializer.VectorDeserializer[$elemTpe, $tpe]()")
         q"new fm.serializer.ImmutableArrayDeserializer[$elemTpe, $tpe]()"
       } else if ((tpe <:< IndexedSeqTpe && IndexedSeqTpe <:< tpe) || (tpe <:< ImmutableIndexedSeqTpe && ImmutableIndexedSeqTpe <:< tpe)) {
         // Note: tpe =:= IndexedSeqTpe doesn't work and we want to make sure we only match scala.collection.IndexedSeq
         //       and NOT sublcasses (since scala.collection.mutable.IndexedSeq is also a subtype but won't work with Vector)
-        //println(s"DETECTED INDEXED_SEQ - $tpe - new fm.serializer.VectorDeserializer[$elemTpe, $tpe]()")
+        log(s"DETECTED INDEXED_SEQ - $tpe - new fm.serializer.VectorDeserializer[$elemTpe, $tpe]()")
         // Default to the VectorDeserializer for any other IndexedSeq type
         q"new fm.serializer.VectorDeserializer[$elemTpe, $tpe]()"
-      } else if (hasImplicit(appliedType(typeOf[CanBuildFrom[_,_,_]], List(WildcardType, elemTpe, tpe)))) {
-        //println(s"DETECTED CanBuildFrom - $tpe - new fm.serializer.CanBuildFromDeserializer[$elemTpe, $tpe]()")
+      } else if (tpe <:< SeqTpe && SeqTpe <:< tpe) {
+        // Default to the VectorDeserializer for any other IndexedSeq type
+        log(s"DETECTED SEQ - $tpe - new fm.serializer.VectorDeserializer[$elemTpe, $tpe]()")
+        q"new fm.serializer.VectorDeserializer[$elemTpe, $tpe]()"
+      } else if (tpe <:< IterableTpe && IterableTpe <:< tpe) {
+        // Default to the VectorDeserializer for any other IndexedSeq type
+        log(s"DETECTED ITERABLE - $tpe - new fm.serializer.VectorDeserializer[$elemTpe, $tpe]()")
+        q"new fm.serializer.VectorDeserializer[$elemTpe, $tpe]()"
+      } else if (hasImplicit(MacroHelpersCompat.canBuildFromOrFactoryType(ctx)(tpe, elemTpe))) {
+        log(s"DETECTED CanBuildFrom - $tpe - new fm.serializer.CanBuildFromDeserializer[$elemTpe, $tpe]()")
         q"new fm.serializer.CanBuildFromDeserializer[$elemTpe, $tpe]()"
       } else if (tpe <:< typeOf[Growable[_]] && hasNoArgsConstructor(tpe)) {
         q"new fm.serializer.GrowableDeserializer[$elemTpe, $tpe](new $tpe)"
@@ -859,7 +869,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     
     val isTrait: Boolean = tpe.typeSymbol.asClass.isTrait
        
-    val tree: Tree = if (hasImplicit(appliedType(typeOf[CanBuildFrom[_,_,_]], List(WildcardType, elemTpe, tpe)))) {
+    val tree: Tree = if (hasImplicit(MacroHelpersCompat.canBuildFromOrFactoryType(ctx)(tpe, elemTpe))) {
       q"new fm.serializer.StringMapCanBuildFromDeserializer[$valueTpe, $tpe]()"
     } else if (tpe <:< typeOf[Growable[_]] && hasNoArgsConstructor(tpe)) {
       q"new fm.serializer.StringMapGrowableDeserializer[$valueTpe, $tpe](new $tpe)"
@@ -916,7 +926,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     case "Boolean" => q"false"
     case "Byte"    => q"(0: Byte)"
     case "Short"   => q"(0: Short)"
-    case "Char"    => q"'\0'"
+    case "Char"    => q"'\u0000'"
     case "Int"     => q"0"
     case "Long"    => q"0L"
     case "Float"   => q"0F"
@@ -1070,7 +1080,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
     }
   }
   
-  def tryMakeObjectSerializer[T: WeakTypeTag](): Option[Expr[ObjectSerializer[T]]] = {
+  def tryMakeObjectSerializer[T: WeakTypeTag]: Option[Expr[ObjectSerializer[T]]] = {
     tryMakeObjectSerializerOrDeserializer[T, ObjectSerializer[T]](makeObjectSerializer)
   }
   
@@ -1080,11 +1090,11 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
    * e.g. You can have a "trait Foo { def name: String }" and a "case class FooImpl(name: String)".  The fields will be read
    *      from FooImpl but the serializer will be for Foo.  This means the Foo must have the same methods as FooImpl for it to work.
    */
-  def tryMakeObjectSerializerForInterface[IFACE: WeakTypeTag, CONCRETE: WeakTypeTag](): Option[Expr[ObjectSerializer[IFACE]]] = {
+  def tryMakeObjectSerializerForInterface[IFACE: WeakTypeTag, CONCRETE: WeakTypeTag]: Option[Expr[ObjectSerializer[IFACE]]] = {
     tryMakeObjectSerializerOrDeserializer[CONCRETE, ObjectSerializer[IFACE]]{ fields => makeObjectSerializer[IFACE](fields) }
   }
-  
-  def tryMakeObjectDeserializer[T: WeakTypeTag](): Option[Expr[ObjectDeserializer[T]]] = {
+
+  def tryMakeObjectDeserializer[T: WeakTypeTag]: Option[Expr[ObjectDeserializer[T]]] = {
     tryMakeObjectSerializerOrDeserializer[T, ObjectDeserializer[T]](makeObjectDeserializer)
   }
   
@@ -1171,7 +1181,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
 
     val deserInfo: ObjectDeserializationInfo = ObjectDeserializationInfo(tpe, sortedFields)
 
-    if (!deserInfo.hasMatchingConstructor) ctx.abort(ctx.enclosingPosition, s"Not sure how to construct ${tpe}.  Details:\n${deserInfo.toPrettyString}")
+    if (!deserInfo.hasMatchingConstructor) ctx.abort(ctx.enclosingPosition, s"Not sure how to construct ${tpe}.  Details:\n${deserInfo.toPrettyString()}")
 
     val name: TermName = newTermName(ctx.fresh("objectDeserializer"))
         
@@ -1485,7 +1495,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
         log(s"Skipping Transient Field/Method:  $field  |  $getter  |  $setter")
         // Ignore the field
       } else {
-        val jb = JavaBeanField(field.name.decoded.trim, getterName, setterName, tpe)
+        val jb: JavaBeanField = JavaBeanField(field.name.decoded.trim, getterName, setterName, tpe)
         log(s"Adding JavaBeanField: $jb")
         defs += jb
       }
@@ -1500,7 +1510,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
       require(setters.isEmpty, s"Unmatched Java Bean Setters: $setters")
     }
     
-    defs.result
+    defs.result()
   }
   
   /**

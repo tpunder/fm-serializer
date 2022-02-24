@@ -1,7 +1,7 @@
 package fm.serializer.validation
 
 object ValidationResult {
-  final object Success extends ValidationResult {
+  object Success extends ValidationResult {
     override def errors: IndexedSeq[ValidationError] = Vector.empty
     override def isSuccess: Boolean = true
     override def isFailure: Boolean = false

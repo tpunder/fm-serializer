@@ -114,8 +114,28 @@ final class ImmutableByteArrayPrimitive extends Primitive[ImmutableArray[Byte]] 
   def serializeField(output: FieldOutput, number: Int, name: String, v: ImmutableArray[Byte]): Unit = if (null != v) output.writeFieldByteArray(number, name, v.toArray) else output.writeFieldNull(number, name)
 
   def defaultValue: ImmutableArray[Byte] = null
-  def deserializeRaw(input: RawInput): ImmutableArray[Byte] = if (input.nextValueIsNull) null else ImmutableArray.wrap(input.readRawByteArray())
-  def deserializeNested(input: NestedInput): ImmutableArray[Byte] = if (input.nextValueIsNull) null else ImmutableArray.wrap(input.readNestedByteArray())
+  def deserializeRaw(input: RawInput): ImmutableArray[Byte] = if (input.nextValueIsNull) null else ImmutableArray.unsafeWrapArray(input.readRawByteArray())
+  def deserializeNested(input: NestedInput): ImmutableArray[Byte] = if (input.nextValueIsNull) null else ImmutableArray.unsafeWrapArray(input.readNestedByteArray())
+}
+
+final class BytePrimitive extends Primitive[Byte] {
+  def serializeRaw(output: RawOutput, v: Byte): Unit = output.writeRawInt(v)
+  def serializeNested(output: NestedOutput, v: Byte): Unit = output.writeNestedInt(v)
+  def serializeField(output: FieldOutput, number: Int, name: String, v: Byte): Unit = output.writeFieldInt(number, name, v)
+
+  def defaultValue: Byte = 0
+  def deserializeRaw(input: RawInput): Byte = input.readRawInt().toByte
+  def deserializeNested(input: NestedInput): Byte = input.readNestedInt().toByte
+}
+
+final class ShortPrimitive extends Primitive[Short] {
+  def serializeRaw(output: RawOutput, v: Short): Unit = output.writeRawInt(v)
+  def serializeNested(output: NestedOutput, v: Short): Unit = output.writeNestedInt(v)
+  def serializeField(output: FieldOutput, number: Int, name: String, v: Short): Unit = output.writeFieldInt(number, name, v)
+
+  def defaultValue: Short = 0
+  def deserializeRaw(input: RawInput): Short = input.readRawInt().toShort
+  def deserializeNested(input: NestedInput): Short = input.readNestedInt().toShort
 }
 
 final class IntPrimitive extends Primitive[Int] {

@@ -15,10 +15,11 @@
  */
 package fm.serializer.protobuf
 
-import org.scalatest.{FunSuite, Matchers}
 import fm.serializer.{Deserializer, Primitive, Serializer}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-final class TestProtobufRaw extends FunSuite with Matchers  {
+final class TestProtobufRaw extends AnyFunSuite with Matchers {
   private def check[T](value: T, expectedBytes: Array[Byte])(implicit ser: Serializer[T], deser: Deserializer[T]): Unit = {
     val bytes = Protobuf.toBytes(value)
     bytes should equal (expectedBytes)

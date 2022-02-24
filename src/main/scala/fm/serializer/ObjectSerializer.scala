@@ -15,11 +15,11 @@
  */
 package fm.serializer
 
-object ObjectSerializer {
-  def apply[T](): ObjectSerializer[T] = macro Macros.makeObjectSerializer[T]
-  def apply[T](field: Field, fields: Field*): ObjectSerializer[T] = macro Macros.makeObjectSerializerFromFields[T]
-  
-  def forInterface[IFACE,CONCRETE](): ObjectSerializer[IFACE] = macro Macros.makeObjectSerializerForInterface[IFACE,CONCRETE]
+object ObjectSerializer extends ObjectSerializerObj {
+  // Moved to ObjectSerializerObj to support Scala 2 and 3
+  //def apply[T](): ObjectSerializer[T] = macro Macros.makeObjectSerializer[T]
+  //def apply[T](field: Field, fields: Field*): ObjectSerializer[T] = macro Macros.makeObjectSerializerFromFields[T]
+  //def forInterface[IFACE,CONCRETE](): ObjectSerializer[IFACE] = macro Macros.makeObjectSerializerForInterface[IFACE,CONCRETE]
 }
 
 /**

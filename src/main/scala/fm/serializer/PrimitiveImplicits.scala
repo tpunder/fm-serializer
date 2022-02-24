@@ -28,6 +28,8 @@ trait PrimitiveImplicits {
   implicit val double:    DoublePrimitive     = new DoublePrimitive()
   implicit val string:    StringPrimitive     = new StringPrimitive()
   implicit val byteArray: ByteArrayPrimitive  = new ByteArrayPrimitive()
+  implicit val byte:      BytePrimitive       = new BytePrimitive()
+  implicit val short:     ShortPrimitive      = new ShortPrimitive()
   implicit val int:       IntPrimitive        = new IntPrimitive()
   implicit val long:      LongPrimitive       = new LongPrimitive()
   implicit val char:      CharPrimitive       = new CharPrimitive()

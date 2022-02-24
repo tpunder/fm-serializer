@@ -21,8 +21,9 @@ import org.bson.{BsonDocument, RawBsonDocument}
  *   protected def companion: SerializableCompanion[Foo] = Foo
  * }
  */
-trait SerializableCompanion[A] {
-  protected def makeSerializer[T](): SimpleObjectSerializer[T] = macro Macros.makeSimpleObjectSerializer[T]
+trait SerializableCompanion[A] extends SerializableCompanionBase {
+  // Moved into SerializableCompanionBase to support both Scala 2 and 3
+  //protected def makeSerializer[T](): SimpleObjectSerializer[T] = macro Macros.makeSimpleObjectSerializer[T]
   
   protected val serializer: SimpleSerializer[A]
   
