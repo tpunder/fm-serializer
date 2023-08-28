@@ -389,7 +389,11 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
   
   def extractFieldAnnotations(tpe: Type): Seq[FieldImpl] = {
     log(s"extractFieldAnnotations($tpe)")
-    
+
+    // Probably a generic type (e.g. "A") which we can't do anything with
+    // This attempt to avoid long stack traces with this error: scala.ScalaReflectionException: type A is not a class
+    if (!tpe.typeSymbol.isClass) return Nil
+
     val annotationTpe: Type = typeOf[Field]
     
     // annotations on values & methods in the class
@@ -436,7 +440,7 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
       
       spec combine additionalInfo combine missingFields
     }
-    
+
     val isAbstract: Boolean = tpe.typeSymbol.asClass.isAbstractClass
     
     // annotations on constructor params (for non-abstract classes)
@@ -1030,6 +1034,10 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
    * vals/vars with no other vars in the class.
    */
   def makeFieldImplsForCaseClass(tpe: Type): Seq[FieldImpl] = {
+    // Probably a generic type (e.g. "A") which we can't do anything with
+    // This attempt to avoid long stack traces with this error: scala.ScalaReflectionException: type A is not a class
+    if (!tpe.typeSymbol.isClass) return Nil
+
     // This method doesn't support java classes
     if (tpe.typeSymbol.asClass.isJava) return Nil
     
@@ -1101,7 +1109,11 @@ abstract class MacroHelpers(isDebug: Boolean) { self =>
   private def tryMakeObjectSerializerOrDeserializer[T: WeakTypeTag, RES](f: Seq[FieldImpl] => Expr[RES]): Option[Expr[RES]] = {
     val tpe: Type = weakTypeOf[T]
     log(s"tryMakeObjectSerializerOrDeserializer($tpe)")
-    
+
+    // Probably a generic type (e.g. "A") which we can't do anything with
+    // This attempt to avoid long stack traces with this error: scala.ScalaReflectionException: type A is not a class
+    if (!tpe.typeSymbol.isClass) return None
+
     val fieldImpls: Seq[Seq[FieldImpl]] = Seq(
       extractFieldAnnotations(tpe),    // Try Annotations
       makeFieldImplsForCaseClass(tpe), // Try Auto-Generate for Case Classes
