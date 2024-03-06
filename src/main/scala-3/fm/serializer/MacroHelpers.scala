@@ -850,7 +850,7 @@ final case class MacroHelpers(isDebug: Boolean)(using Quotes) {
 
     log(s"body: ${body.map{ _.show }.mkString("\n  ","\n  ", "")}")
 
-    val (modValDef: ValDef, modClassDef: ClassDef) = ClassDef.module(modSym, List(TypeTree.of[Serializer[T]]), body)
+    val (modValDef: ValDef, modClassDef: ClassDef) = ClassDef.module(modSym, List(TypeTree.of[Object], TypeTree.of[Serializer[T]]), body)
 
     log(s"modValDef: ${modValDef.show}")
     log(s"modClassDef: ${modClassDef.show}")
@@ -915,7 +915,7 @@ final case class MacroHelpers(isDebug: Boolean)(using Quotes) {
       DefDefQuotes(modSym.declaredMethod("make").head, { case List(List(value)) => Some(Apply(Select(New(TypeTree.of[T]), Type.of[T].classSymbol.primaryConstructor), List(value.asExprOf[F].asTerm))) }),
     )
 
-    val (modValDef: ValDef, modClassDef: ClassDef) = ClassDef.module(modSym, List(TypeTree.of[Deserializer[T]]), body)
+    val (modValDef: ValDef, modClassDef: ClassDef) = ClassDef.module(modSym, List(TypeTree.of[Object], TypeTree.of[Deserializer[T]]), body)
     val expr: Expr[Deserializer[T]] = Block(List(modValDef, modClassDef), Ref(modSym)).asExprOf[Deserializer[T]]
 
     Option(expr)
@@ -1741,7 +1741,7 @@ final case class MacroHelpers(isDebug: Boolean)(using Quotes) {
 
     log(s"body: ${body.map{ _.show }.mkString("\n  ","\n  ", "")}")
 
-    val (modValDef: ValDef, modClassDef: ClassDef) = ClassDef.module(modSym, List(TypeTree.of[ObjectSerializer[T]]), body)
+    val (modValDef: ValDef, modClassDef: ClassDef) = ClassDef.module(modSym, List(TypeTree.of[Object], TypeTree.of[ObjectSerializer[T]]), body)
 
     log(s"modValDef: ${modValDef.show}")
     log(s"modClassDef: ${modClassDef.show}")
@@ -1881,7 +1881,7 @@ final case class MacroHelpers(isDebug: Boolean)(using Quotes) {
       ValDef(modSym.declaredField("readFun"), Some(Apply(Select(New(TypeIdent(readFunCls)), readFunCls.primaryConstructor), List()))),
     )
 
-    val (modValDef: ValDef, modClassDef: ClassDef) = ClassDef.module(modSym, List(TypeTree.of[ObjectDeserializer[T]]), body)
+    val (modValDef: ValDef, modClassDef: ClassDef) = ClassDef.module(modSym, List(TypeTree.of[Object], TypeTree.of[ObjectDeserializer[T]]), body)
 
     val res = Block(List(modValDef, modClassDef), Ref(modSym)).asExprOf[ObjectDeserializer[T]]
     log(s"SUCCESS GENERATING OBJECT DESERIALIZER FOR ${TypeRepr.of[T].show}")
